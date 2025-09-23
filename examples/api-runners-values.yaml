@@ -12,7 +12,7 @@ gha-runner-scale-set:
   githubConfigSecret:
     github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token
 
-  minRunners: 1
+  minRunners: 2      # Increased for pre-warming
   maxRunners: 15
 
   template:
@@ -20,6 +20,7 @@ gha-runner-scale-set:
       containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
+        imagePullPolicy: IfNotPresent  # Faster startup
         command:
         - /home/runner/run.sh
         env:
@@ -33,11 +34,11 @@ gha-runner-scale-set:
           value: "tcp://localhost:2375"
         resources:
           requests:
-            cpu: "2"
-            memory: 4Gi
+            cpu: "4"      # Upgraded to large profile
+            memory: 8Gi   # Upgraded to large profile
           limits:
-            cpu: "3"
-            memory: 6Gi
+            cpu: "6"      # Upgraded to large profile
+            memory: 12Gi  # Upgraded to large profile
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
@@ -56,11 +57,11 @@ gha-runner-scale-set:
           value: ""
         resources:
           requests:
-            cpu: "1"
-            memory: 2Gi
+            cpu: "2"      # Upgraded for faster Docker builds
+            memory: 4Gi   # Upgraded for faster Docker builds
           limits:
-            cpu: "2"
-            memory: 4Gi
+            cpu: "4"      # Upgraded for faster Docker builds
+            memory: 8Gi   # Upgraded for faster Docker builds
         securityContext:
           privileged: true
         volumeMounts:

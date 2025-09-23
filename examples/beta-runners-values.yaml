@@ -12,7 +12,7 @@ gha-runner-scale-set:
   githubConfigSecret:
     github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token
 
-  minRunners: 0
+  minRunners: 1      # Keep at least 1 runner warm
   maxRunners: 20
 
   # Security context for beta runners
@@ -24,6 +24,7 @@ gha-runner-scale-set:
       containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
+        imagePullPolicy: IfNotPresent  # Faster startup
         command:
         - /home/runner/run.sh
         env:
@@ -34,18 +35,18 @@ gha-runner-scale-set:
             fieldRef:
               fieldPath: metadata.name
         - name: NODE_OPTIONS
-          value: "--max-old-space-size=4096"
+          value: "--max-old-space-size=8192"  # Increased memory
         - name: PYTHONUNBUFFERED
           value: "1"
         - name: PIP_CACHE_DIR
           value: "/home/runner/_work/_pip-cache"
         resources:
           requests:
-            cpu: 2000m
-            memory: 4Gi
+            cpu: "8"      # Upgraded to xlarge profile
+            memory: 16Gi  # Upgraded to xlarge profile
           limits:
-            cpu: 4000m
-            memory: 8Gi
+            cpu: "12"     # Upgraded to xlarge profile
+            memory: 24Gi  # Upgraded to xlarge profile
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
