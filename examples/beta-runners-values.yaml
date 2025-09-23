@@ -2,6 +2,10 @@
 # Deploy with: helm install arc-beta-runners ./charts/github-actions-runners -f examples/beta-runners-values.yaml
 
 gha-runner-scale-set:
+  # Controller service account configuration
+  controllerServiceAccount:
+    namespace: arc-systems
+    name: arc-gha-rs-controller
   githubConfigUrl: "https://github.com/Matchpoint-AI/project-beta"
   runnerScaleSetName: "arc-beta-runners-new"
 
