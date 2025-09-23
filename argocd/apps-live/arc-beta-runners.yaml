@@ -35,7 +35,7 @@ spec:
       name: arc-beta-runners-new-gha-rs-github-secret
       jsonPointers:
         - /data/github_token
-    retry:
+  retry:
       limit: 5
       backoff:
         duration: 5s
