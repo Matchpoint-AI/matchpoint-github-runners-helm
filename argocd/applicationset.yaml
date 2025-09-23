@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: github-runners
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: arc-frontend-runners
+        namespace: arc-frontend-runners
+        valuesFile: examples/frontend-runners-values.yaml
+        repo: project-beta-frontend
+      - name: arc-api-runners-v2
+        namespace: arc-api-runners-v2
+        valuesFile: examples/api-runners-values.yaml
+        repo: project-beta-api
+      - name: arc-beta-runners-new
+        namespace: arc-beta-runners-new
+        valuesFile: examples/beta-runners-values.yaml
+        repo: project-beta
+  template:
+    metadata:
+      name: '{{name}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm
+        targetRevision: main
+        path: charts/github-actions-runners
+        helm:
+          releaseName: '{{name}}'
+          valueFiles:
+            - '../../{{valuesFile}}'
+          parameters:
+            - name: gha-runner-scale-set.githubConfigSecret.github_token
+              value: "$ARGOCD_ENV_GITHUB_TOKEN"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 10
