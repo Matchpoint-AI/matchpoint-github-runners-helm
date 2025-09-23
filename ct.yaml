@@ -1,0 +1,10 @@
+# Configuration for chart-testing
+remote: origin
+target-branch: main
+chart-dirs:
+  - charts
+chart-repos:
+  - actions=oci://ghcr.io/actions/actions-runner-controller-charts
+helm-extra-args: --timeout 600s
+check-version-increment: true
+validate-maintainers: false

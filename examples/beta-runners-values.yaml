@@ -1,0 +1,64 @@
+# Values file for Matchpoint Beta runners (Python with persistent storage)
+# Deploy with: helm install arc-beta-runners ./charts/github-actions-runners -f examples/beta-runners-values.yaml
+
+gha-runner-scale-set:
+  githubConfigUrl: "https://github.com/Matchpoint-AI/project-beta"
+  runnerScaleSetName: "arc-beta-runners-new"
+
+  githubConfigSecret:
+    github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token
+
+  minRunners: 0
+  maxRunners: 20
+
+  # Security context for beta runners
+  securityContext:
+    fsGroup: 123
+
+  template:
+    spec:
+      containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        command:
+        - /home/runner/run.sh
+        env:
+        - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+          value: "false"
+        - name: ACTIONS_RUNNER_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=4096"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PIP_CACHE_DIR
+          value: "/home/runner/_work/_pip-cache"
+        resources:
+          requests:
+            cpu: 2000m
+            memory: 4Gi
+          limits:
+            cpu: 4000m
+            memory: 8Gi
+        volumeMounts:
+        - name: work
+          mountPath: /home/runner/_work
+        - name: build-cache
+          mountPath: /home/runner/_work/_cache
+      restartPolicy: Never
+      volumes:
+      - name: work
+        ephemeral:
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 35Gi
+              storageClassName: standard-rwo
+      - name: build-cache
+        emptyDir:
+          sizeLimit: 15Gi

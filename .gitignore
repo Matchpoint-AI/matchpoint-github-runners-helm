@@ -1,0 +1,18 @@
+# Helm
+*.tgz
+*.lock
+
+# Chart dependencies
+charts/*/charts/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local development
+local-values.yaml
+*-local.yaml

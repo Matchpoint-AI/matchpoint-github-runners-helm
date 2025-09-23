@@ -1,0 +1,76 @@
+# Values file for Matchpoint API runners
+# Deploy with: helm install arc-api-runners ./charts/github-actions-runners -f examples/api-runners-values.yaml
+
+gha-runner-scale-set:
+  githubConfigUrl: "https://github.com/Matchpoint-AI/project-beta-api"
+  runnerScaleSetName: "arc-api-runners-v2"
+
+  githubConfigSecret:
+    github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token
+
+  minRunners: 1
+  maxRunners: 15
+
+  template:
+    spec:
+      containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        command:
+        - /home/runner/run.sh
+        env:
+        - name: ACTIONS_RUNNER_LABELS
+          value: "arc-api-runners-v2,self-hosted,linux,x64"
+        - name: RUNNER_NAME_PREFIX
+          value: "arc-api"
+        - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+          value: "false"
+        - name: DOCKER_HOST
+          value: "tcp://localhost:2375"
+        resources:
+          requests:
+            cpu: "2"
+            memory: 4Gi
+          limits:
+            cpu: "3"
+            memory: 6Gi
+        volumeMounts:
+        - name: work
+          mountPath: /home/runner/_work
+        - name: docker-certs
+          mountPath: /certs/client
+          readOnly: true
+      - name: dind
+        image: docker:24-dind
+        command:
+        - dockerd
+        args:
+        - --host=tcp://0.0.0.0:2375
+        - --storage-driver=overlay2
+        env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+        resources:
+          requests:
+            cpu: "1"
+            memory: 2Gi
+          limits:
+            cpu: "2"
+            memory: 4Gi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: docker-storage
+          mountPath: /var/lib/docker
+        - name: docker-certs
+          mountPath: /certs/client
+      restartPolicy: Never
+      volumes:
+      - name: work
+        emptyDir:
+          sizeLimit: 20Gi
+      - name: docker-storage
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: docker-certs
+        emptyDir: {}

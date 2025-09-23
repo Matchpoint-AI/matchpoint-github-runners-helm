@@ -1,0 +1,21 @@
+apiVersion: v2
+name: github-actions-controller
+description: A Helm chart for GitHub Actions Runner Scale Set Controller
+type: application
+version: 0.1.0
+appVersion: "0.12.1"
+maintainers:
+  - name: Matchpoint-AI
+    email: engineering@matchpoint.ai
+keywords:
+  - github-actions
+  - ci-cd
+  - runners
+  - kubernetes
+home: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm
+sources:
+  - https://github.com/actions/actions-runner-controller
+dependencies:
+  - name: gha-runner-scale-set-controller
+    version: 0.12.1
+    repository: oci://ghcr.io/actions/actions-runner-controller-charts
