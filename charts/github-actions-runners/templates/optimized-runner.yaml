@@ -1,0 +1,123 @@
+{{- if .Values.performanceMode }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-runner-optimization
+  namespace: {{ .Release.Namespace }}
+data:
+  runner-optimizations.sh: |
+    #!/bin/bash
+    # Performance optimizations for GitHub Actions runners
+
+    # Increase file descriptor limits
+    ulimit -n 65536
+
+    # Optimize TCP settings
+    sysctl -w net.core.somaxconn=65535 2>/dev/null || true
+    sysctl -w net.ipv4.tcp_max_syn_backlog=65535 2>/dev/null || true
+    sysctl -w net.core.netdev_max_backlog=65535 2>/dev/null || true
+
+    # Optimize memory settings
+    echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+
+    # Pre-warm package managers
+    if command -v npm &> /dev/null; then
+      npm config set cache /home/runner/_work/_npm-cache
+      npm config set prefer-offline true
+      npm config set audit false
+      npm config set fund false
+      npm config set update-notifier false
+    fi
+
+    if command -v pip &> /dev/null; then
+      pip config set global.cache-dir /home/runner/_work/_pip-cache
+      pip config set global.no-cache-dir false
+      pip config set global.disable-pip-version-check true
+    fi
+
+    # Pre-create common directories
+    mkdir -p /home/runner/_work/_temp
+    mkdir -p /home/runner/_work/_actions
+    mkdir -p /home/runner/_work/_tool
+
+    echo "Runner optimizations applied"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-cache-warmer
+  namespace: {{ .Release.Namespace }}
+data:
+  warm-caches.sh: |
+    #!/bin/bash
+    # Pre-warm caches with common dependencies
+
+    echo "Warming npm cache..."
+    if command -v npm &> /dev/null; then
+      # Pre-install common global packages
+      npm install -g typescript eslint prettier jest webpack --prefer-offline 2>/dev/null || true
+    fi
+
+    echo "Warming pip cache..."
+    if command -v pip &> /dev/null; then
+      # Pre-install common Python packages
+      pip install --user pytest black flake8 requests 2>/dev/null || true
+    fi
+
+    echo "Warming git cache..."
+    # Pre-fetch common actions
+    git clone --depth=1 https://github.com/actions/checkout.git /tmp/actions-checkout 2>/dev/null || true
+    git clone --depth=1 https://github.com/actions/setup-node.git /tmp/actions-setup-node 2>/dev/null || true
+    git clone --depth=1 https://github.com/actions/setup-python.git /tmp/actions-setup-python 2>/dev/null || true
+
+    echo "Cache warming complete"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-cache-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: {{ .Values.storage.cacheStorageClass | default "premium-rwo" }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.cacheSize | default "50Gi" }}
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-image-puller
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: image-puller
+  template:
+    metadata:
+      labels:
+        app: image-puller
+    spec:
+      initContainers:
+      {{- range .Values.prewarming.cachedImages }}
+      - name: pull-{{ . | replace "/" "-" | replace ":" "-" }}
+        image: {{ . }}
+        imagePullPolicy: Always
+        command: ["sh", "-c", "echo 'Image {{ . }} pulled successfully'"]
+      {{- end }}
+      containers:
+      - name: pause
+        image: gcr.io/google_containers/pause:3.2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+          limits:
+            cpu: 10m
+            memory: 10Mi
+
+{{- end }}

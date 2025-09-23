@@ -7,9 +7,9 @@ repositories:
     org: Matchpoint-AI
     category: frontend
     scaling:
-      minRunners: 1
+      minRunners: 2      # Increased for pre-warming
       maxRunners: 15
-    profile: medium
+    profile: large       # Upgraded from medium for better performance
     labels:
       - arc-frontend-runners
       - self-hosted
@@ -21,9 +21,9 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 1
+      minRunners: 2      # Increased for pre-warming
       maxRunners: 15
-    profile: medium
+    profile: large       # Upgraded from medium for better performance
     labels:
       - arc-api-runners
       - self-hosted
@@ -35,9 +35,9 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 0
+      minRunners: 1      # Keep at least 1 runner warm
       maxRunners: 20
-    profile: large
+    profile: xlarge      # Upgraded from large for maximum performance
     labels:
       - arc-beta-runners
       - self-hosted

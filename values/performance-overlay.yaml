@@ -1,0 +1,63 @@
+# Performance overlay configuration
+# Applied on top of base configuration for speed
+
+# Keep more runners warm
+scaling:
+  warmPool:
+    enabled: true
+    size: 2  # Always keep 2 runners ready per repo
+
+# Optimize container startup
+containers:
+  runner:
+    imagePullPolicy: IfNotPresent  # Avoid unnecessary pulls
+    startupProbe:
+      initialDelaySeconds: 5  # Faster startup checks
+      periodSeconds: 5
+      failureThreshold: 3
+
+  dind:
+    resources:
+      requests:
+        cpu: "2"
+        memory: "4Gi"
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+
+# Enhanced networking
+networking:
+  dnsPolicy: Default  # Use node DNS for speed
+  hostAliases:
+    - ip: "140.82.112.3"
+      hostnames:
+        - "github.com"
+    - ip: "140.82.112.5"
+      hostnames:
+        - "api.github.com"
+
+# Storage optimizations
+storage:
+  # Use tmpfs for work directory
+  workDir:
+    type: emptyDir
+    medium: Memory
+    sizeLimit: 10Gi
+
+  # Persistent cache across runs
+  cache:
+    type: persistentVolumeClaim
+    size: 50Gi
+    accessMode: ReadWriteMany
+
+# Job optimizations
+jobSettings:
+  # Parallel job execution
+  parallelism: 4
+
+  # Retry failed jobs quickly
+  backoffLimit: 1
+  activeDeadlineSeconds: 3600
+
+  # Fast cleanup
+  ttlSecondsAfterFinished: 60

@@ -1,0 +1,240 @@
+# Performance Optimized Runner Configuration
+# This configuration prioritizes speed over cost efficiency
+
+# Increased resource profiles for faster execution
+scaling:
+  profiles:
+    # Boosted small profile
+    small-fast:
+      cpu:
+        request: "1"
+        limit: "2"
+      memory:
+        request: "2Gi"
+        limit: "4Gi"
+      storage:
+        work: "15Gi"
+        cache: "10Gi"
+
+    # Boosted medium profile - recommended default
+    medium-fast:
+      cpu:
+        request: "4"
+        limit: "6"
+      memory:
+        request: "8Gi"
+        limit: "12Gi"
+      storage:
+        work: "30Gi"
+        cache: "20Gi"
+
+    # Boosted large profile
+    large-fast:
+      cpu:
+        request: "6"
+        limit: "10"
+      memory:
+        request: "12Gi"
+        limit: "20Gi"
+      storage:
+        work: "50Gi"
+        cache: "30Gi"
+
+    # Maximum performance profile
+    ultra-fast:
+      cpu:
+        request: "12"
+        limit: "16"
+      memory:
+        request: "24Gi"
+        limit: "32Gi"
+      storage:
+        work: "100Gi"
+        cache: "50Gi"
+
+# Pre-warming configuration - keep runners ready
+prewarming:
+  enabled: true
+  # Always keep this many runners warm and ready
+  warmRunners: 2
+  # Pre-pull images on node startup
+  imagePullPolicy: "Always"
+  # Cache commonly used images
+  cachedImages:
+    - "ghcr.io/actions/actions-runner:latest"
+    - "docker:24-dind"
+    - "node:18-alpine"
+    - "python:3.11-slim"
+    - "golang:1.21-alpine"
+
+# Enhanced Docker-in-Docker resources for faster builds
+dind:
+  profiles:
+    fast:
+      cpu:
+        request: "2"
+        limit: "4"
+      memory:
+        request: "4Gi"
+        limit: "8Gi"
+      storage: "50Gi"
+      # Use overlay2 with optimizations
+      storageDriver: "overlay2"
+      storageOpts:
+        - "overlay2.override_kernel_check=true"
+        - "overlay2.size=50G"
+
+# Caching configuration for faster dependency resolution
+caching:
+  # Node.js/npm optimizations
+  npm:
+    enabled: true
+    persistentCache: true
+    cacheSize: "20Gi"
+    # Pre-install common packages
+    preinstalled:
+      - "@types/node"
+      - "typescript"
+      - "eslint"
+      - "prettier"
+      - "jest"
+      - "webpack"
+      - "react"
+      - "next"
+
+  # Python/pip optimizations
+  pip:
+    enabled: true
+    persistentCache: true
+    cacheSize: "15Gi"
+    # Pre-install common packages
+    preinstalled:
+      - "pytest"
+      - "black"
+      - "flake8"
+      - "requests"
+      - "numpy"
+      - "pandas"
+      - "fastapi"
+      - "sqlalchemy"
+
+  # Docker layer caching
+  docker:
+    enabled: true
+    registryMirror: true
+    layerCacheSize: "30Gi"
+    # Use BuildKit for faster builds
+    buildkit: true
+    buildkitConfig:
+      maxParallelism: 4
+      cacheImports: true
+
+  # Git repository caching
+  git:
+    enabled: true
+    shallowClone: true
+    fetchDepth: 1
+    # Cache git objects between runs
+    objectCache: true
+    objectCacheSize: "10Gi"
+
+# Network optimizations
+network:
+  # Use host network for faster connectivity (less secure)
+  hostNetwork: false
+  # DNS caching for faster resolution
+  dnsCache: true
+  dnsCacheSize: "100Mi"
+  # Connection pooling
+  connectionPool:
+    maxConnections: 100
+    keepAlive: true
+
+# Storage optimizations
+storage:
+  # Use local SSD for better I/O
+  storageClass: "premium-rwo"
+  # Use tmpfs for temporary files
+  useTmpfs: true
+  tmpfsSize: "5Gi"
+  # Enable parallel I/O
+  parallelIO: true
+  # Optimize file system
+  filesystem:
+    type: "ext4"
+    mountOptions:
+      - "noatime"
+      - "nodiratime"
+      - "nobarrier"
+      - "commit=60"
+
+# Job startup optimizations
+startup:
+  # Skip unnecessary initialization
+  skipTests: true
+  skipUpdates: true
+  # Parallel initialization
+  parallelInit: true
+  # Fast boot mode
+  fastBoot: true
+  # Pre-compiled runner binary
+  preCompiledRunner: true
+
+# Autoscaling optimizations for faster response
+autoscaling:
+  # Aggressive scale-up
+  scaleUp:
+    stabilizationWindowSeconds: 30  # Reduced from 60
+    policies:
+      - type: Percent
+        value: 200  # Double immediately
+        periodSeconds: 30
+      - type: Pods
+        value: 10  # Add 10 runners at once
+        periodSeconds: 30
+    selectPolicy: Max
+
+  # Conservative scale-down to keep runners ready
+  scaleDown:
+    stabilizationWindowSeconds: 600  # Increased from 300
+    policies:
+      - type: Percent
+        value: 25  # Scale down slowly
+        periodSeconds: 600
+      - type: Pods
+        value: 1  # Remove only 1 at a time
+        periodSeconds: 600
+    selectPolicy: Min
+
+# Performance monitoring
+monitoring:
+  metrics:
+    enabled: true
+    # Track performance metrics
+    performanceMetrics:
+      - startupTime
+      - jobExecutionTime
+      - imagePullTime
+      - cachHitRate
+      - networkLatency
+    # Alert on slow performance
+    alerts:
+      slowStartup:
+        threshold: 60  # seconds
+        action: "scale-up"
+      slowExecution:
+        threshold: 300  # seconds
+        action: "investigate"
+
+# Experimental optimizations (use with caution)
+experimental:
+  # Use init containers to pre-pull images
+  initContainers: true
+  # Mount runner binary from host
+  hostBinaryMount: false
+  # Use kernel bypass for networking
+  kernelBypass: false
+  # Enable huge pages for memory
+  hugePages: false
+  # Use SR-IOV for network acceleration
+  sriov: false
