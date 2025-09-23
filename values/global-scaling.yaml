@@ -1,0 +1,190 @@
+# Global Scaling Configuration
+# Control runner scaling across the entire cluster
+
+# Global scaling multipliers - affects ALL repositories
+scaling:
+  # Master switch - multiply all runner counts by this factor
+  # Examples:
+  #   0.5 = Half capacity (cost saving mode)
+  #   1.0 = Normal capacity
+  #   2.0 = Double capacity (high demand)
+  #   3.0 = Triple capacity (peak load)
+  globalMultiplier: 1.0
+
+  # Absolute limits (safety boundaries)
+  absolute:
+    maxTotalRunners: 200        # Total runners across all repos
+    maxRunnersPerRepo: 50        # Maximum for any single repo
+    minRunnersPerRepo: 0         # Minimum for any single repo
+
+  # Quick presets for common scenarios
+  presets:
+    # Normal operations
+    normal:
+      globalMultiplier: 1.0
+      maxTotalRunners: 200
+
+    # Cost saving mode (nights/weekends)
+    economy:
+      globalMultiplier: 0.3
+      maxTotalRunners: 50
+
+    # High demand (release days)
+    peak:
+      globalMultiplier: 2.0
+      maxTotalRunners: 300
+
+    # Emergency scale (critical fixes)
+    emergency:
+      globalMultiplier: 3.0
+      maxTotalRunners: 400
+
+    # Maintenance mode
+    maintenance:
+      globalMultiplier: 0.1
+      maxTotalRunners: 10
+
+# Time-based scaling rules
+timeBasedScaling:
+  enabled: true
+  rules:
+    # Weekday business hours (high capacity)
+    - name: business-hours
+      schedule: "0 8 * * 1-5"    # 8 AM Monday-Friday
+      preset: normal
+
+    # Weekday evenings (reduced capacity)
+    - name: evening-hours
+      schedule: "0 18 * * 1-5"   # 6 PM Monday-Friday
+      preset: economy
+
+    # Weekends (minimal capacity)
+    - name: weekend
+      schedule: "0 0 * * 6"       # Saturday midnight
+      preset: economy
+
+    # Sunday night prep for Monday
+    - name: sunday-prep
+      schedule: "0 22 * * 0"      # Sunday 10 PM
+      preset: normal
+
+# Repository priority tiers
+priorities:
+  # Critical repositories get runners first
+  critical:
+    - project-beta              # Main application
+    - project-beta-api          # API backend
+    guaranteedMinimum: 3        # Always get at least 3 runners
+
+  high:
+    - project-beta-frontend     # Frontend
+    guaranteedMinimum: 2
+
+  normal:
+    - infrastructure
+    - documentation
+    guaranteedMinimum: 1
+
+  low:
+    - experimental
+    - archive
+    guaranteedMinimum: 0
+
+# Scaling triggers and thresholds
+triggers:
+  # Auto-scale up when queue time exceeds threshold
+  queueTime:
+    enabled: true
+    thresholdSeconds: 60        # Scale up if jobs wait > 60s
+    scaleUpPercent: 50          # Increase by 50%
+    cooldownSeconds: 300        # Wait 5 min before next scale-up
+
+  # Auto-scale down when idle
+  idleTime:
+    enabled: true
+    thresholdSeconds: 600       # Scale down if idle > 10 min
+    scaleDownPercent: 30        # Decrease by 30%
+    cooldownSeconds: 600        # Wait 10 min before next scale-down
+
+  # CPU/Memory based scaling
+  resourceBased:
+    enabled: true
+    cpuThresholdPercent: 80     # Scale up at 80% CPU
+    memoryThresholdPercent: 85  # Scale up at 85% memory
+
+# Cluster capacity settings
+clusterCapacity:
+  # Resource quotas per namespace
+  namespaceQuotas:
+    default:
+      maxCPU: "100"
+      maxMemory: "200Gi"
+      maxStorage: "1Ti"
+
+    large:
+      maxCPU: "200"
+      maxMemory: "400Gi"
+      maxStorage: "2Ti"
+
+  # Node pool configurations
+  nodePools:
+    general:
+      maxNodes: 20
+      instanceType: "n2-standard-4"
+
+    compute:
+      maxNodes: 10
+      instanceType: "c2-standard-8"
+
+    memory:
+      maxNodes: 5
+      instanceType: "m2-highmem-4"
+
+# Cost optimization
+costOptimization:
+  enabled: true
+
+  # Use spot/preemptible instances
+  spotInstances:
+    enabled: true
+    maxSpotPercent: 70         # Up to 70% can be spot
+
+  # Scale to zero during inactivity
+  scaleToZero:
+    enabled: true
+    afterMinutes: 30           # Scale to 0 after 30 min idle
+    excludeRepos:              # Never scale these to zero
+      - project-beta
+      - project-beta-api
+
+  # Resource right-sizing
+  rightSizing:
+    enabled: true
+    checkInterval: "24h"       # Review usage daily
+    downgradeUnderutilized: true
+    upgradeThrottled: true
+
+# Monitoring and alerting
+monitoring:
+  metrics:
+    - runnerUtilization        # % of runners busy
+    - queueLength              # Jobs waiting
+    - averageQueueTime         # Wait time
+    - runnerStartupTime        # Time to provision
+    - costPerJob               # Economic metric
+
+  alerts:
+    - name: high-queue-time
+      condition: "averageQueueTime > 120"
+      action: scale-up
+      notify: ["ops-team"]
+
+    - name: low-utilization
+      condition: "runnerUtilization < 20"
+      action: scale-down
+      notify: ["cost-team"]
+
+    - name: capacity-limit
+      condition: "totalRunners > clusterCapacity * 0.9"
+      action: notify-only
+      notify: ["ops-team", "platform-team"]
