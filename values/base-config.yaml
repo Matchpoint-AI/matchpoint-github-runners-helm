@@ -1,0 +1,193 @@
+# Base configuration for GitHub Actions Runners
+# This file contains the core parameters that control scaling behavior
+
+# Global scaling parameters
+scaling:
+  # Default runner counts (can be overridden per repository)
+  defaults:
+    minRunners: 0
+    maxRunners: 10
+
+  # Resource profiles (t-shirt sizes for different workload types)
+  profiles:
+    small:
+      cpu:
+        request: "500m"
+        limit: "1"
+      memory:
+        request: "1Gi"
+        limit: "2Gi"
+      storage:
+        work: "10Gi"
+        cache: "5Gi"
+
+    medium:
+      cpu:
+        request: "2"
+        limit: "3"
+      memory:
+        request: "4Gi"
+        limit: "6Gi"
+      storage:
+        work: "20Gi"
+        cache: "10Gi"
+
+    large:
+      cpu:
+        request: "4"
+        limit: "6"
+      memory:
+        request: "8Gi"
+        limit: "12Gi"
+      storage:
+        work: "40Gi"
+        cache: "20Gi"
+
+    xlarge:
+      cpu:
+        request: "8"
+        limit: "12"
+      memory:
+        request: "16Gi"
+        limit: "24Gi"
+      storage:
+        work: "80Gi"
+        cache: "40Gi"
+
+# Docker-in-Docker sidecar resources (when needed)
+dind:
+  profiles:
+    small:
+      cpu:
+        request: "500m"
+        limit: "1"
+      memory:
+        request: "1Gi"
+        limit: "2Gi"
+      storage: "10Gi"
+
+    medium:
+      cpu:
+        request: "1"
+        limit: "2"
+      memory:
+        request: "2Gi"
+        limit: "4Gi"
+      storage: "20Gi"
+
+    large:
+      cpu:
+        request: "2"
+        limit: "4"
+      memory:
+        request: "4Gi"
+        limit: "8Gi"
+      storage: "40Gi"
+
+# Repository categories with their specific needs
+categories:
+  frontend:
+    profile: "medium"
+    enableDocker: true
+    cacheTypes:
+      - npm
+      - yarn
+      - pnpm
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=6144"
+      NPM_CONFIG_CACHE: "/home/runner/_work/_npm-cache"
+
+  backend:
+    profile: "medium"
+    enableDocker: true
+    cacheTypes:
+      - pip
+      - maven
+      - gradle
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PIP_CACHE_DIR: "/home/runner/_work/_pip-cache"
+
+  infrastructure:
+    profile: "small"
+    enableDocker: false
+    cacheTypes: []
+    environment: {}
+
+  ml:
+    profile: "xlarge"
+    enableDocker: true
+    cacheTypes:
+      - pip
+      - models
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PIP_CACHE_DIR: "/home/runner/_work/_pip-cache"
+      MODEL_CACHE_DIR: "/home/runner/_work/_model-cache"
+
+  mobile:
+    profile: "large"
+    enableDocker: false
+    cacheTypes:
+      - gradle
+      - cocoapods
+    environment: {}
+
+# Autoscaling behavior
+autoscaling:
+  # Scale-up behavior
+  scaleUp:
+    stabilizationWindowSeconds: 60
+    policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+      - type: Pods
+        value: 5
+        periodSeconds: 60
+    selectPolicy: Max
+
+  # Scale-down behavior
+  scaleDown:
+    stabilizationWindowSeconds: 300
+    policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 300
+      - type: Pods
+        value: 2
+        periodSeconds: 300
+    selectPolicy: Min
+
+# Storage configuration
+storage:
+  # Storage class for persistent volumes
+  storageClass: "standard-rwo"
+
+  # Use ephemeral volumes for better performance
+  useEphemeral: true
+
+  # Cache retention
+  cacheRetentionDays: 7
+
+# Network policies
+network:
+  # Allow runners to access these external services
+  allowedExternalServices:
+    - "github.com"
+    - "api.github.com"
+    - "ghcr.io"
+    - "docker.io"
+    - "registry.npmjs.org"
+    - "pypi.org"
+    - "maven.apache.org"
+
+# Monitoring and observability
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    interval: 30s
+  logging:
+    level: "info"
+    format: "json"

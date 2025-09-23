@@ -1,0 +1,115 @@
+# Repository-specific runner configurations
+# This file maps repositories to their runner requirements
+
+repositories:
+  # Frontend repositories
+  - name: project-beta-frontend
+    org: Matchpoint-AI
+    category: frontend
+    scaling:
+      minRunners: 1
+      maxRunners: 15
+    profile: medium
+    labels:
+      - arc-frontend-runners
+      - self-hosted
+      - linux
+      - x64
+
+  # Backend/API repositories
+  - name: project-beta-api
+    org: Matchpoint-AI
+    category: backend
+    scaling:
+      minRunners: 1
+      maxRunners: 15
+    profile: medium
+    labels:
+      - arc-api-runners
+      - self-hosted
+      - linux
+      - x64
+
+  # Main application repository
+  - name: project-beta
+    org: Matchpoint-AI
+    category: backend
+    scaling:
+      minRunners: 0
+      maxRunners: 20
+    profile: large
+    labels:
+      - arc-beta-runners
+      - self-hosted
+      - linux
+      - x64
+    # Override storage for this repository
+    storage:
+      work: "35Gi"
+      cache: "15Gi"
+    # Additional environment variables
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+
+  # Future repositories can be added here
+  # - name: project-ml
+  #   org: Matchpoint-AI
+  #   category: ml
+  #   scaling:
+  #     minRunners: 0
+  #     maxRunners: 5
+  #   profile: xlarge
+  #   labels:
+  #     - ml-runners
+  #     - gpu-enabled
+  #     - self-hosted
+
+  # - name: mobile-app
+  #   org: Matchpoint-AI
+  #   category: mobile
+  #   scaling:
+  #     minRunners: 0
+  #     maxRunners: 10
+  #   profile: large
+
+  # - name: infrastructure
+  #   org: Matchpoint-AI
+  #   category: infrastructure
+  #   scaling:
+  #     minRunners: 0
+  #     maxRunners: 5
+  #   profile: small
+
+# Global overrides (applied to all repositories)
+globalOverrides:
+  # Force specific runner image
+  runnerImage: "ghcr.io/actions/actions-runner:latest"
+
+  # Add global labels to all runners
+  additionalLabels:
+    - matchpoint-ai
+
+  # Security settings
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+
+  # Timeout settings (in seconds)
+  jobTimeout: 21600  # 6 hours
+  idleTimeout: 600   # 10 minutes
+
+# Environment-specific settings
+environments:
+  development:
+    maxRunnersMultiplier: 0.5  # Use half the max runners in dev
+    profileDowngrade: true      # Use smaller profiles in dev
+
+  staging:
+    maxRunnersMultiplier: 0.75  # Use 75% of max runners in staging
+    profileDowngrade: false
+
+  production:
+    maxRunnersMultiplier: 1.0  # Use full capacity in production
+    profileDowngrade: false
+    # Add high availability settings
+    podAntiAffinity: true
+    spreadAcrossZones: true

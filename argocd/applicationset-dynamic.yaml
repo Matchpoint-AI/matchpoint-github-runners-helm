@@ -1,0 +1,192 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: github-runners-dynamic
+  namespace: argocd
+spec:
+  generators:
+  # Generate applications from Git files
+  - git:
+      repoURL: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm
+      revision: main
+      files:
+      - path: "values/repositories.yaml"
+
+  template:
+    metadata:
+      name: '{{name}}-runners'
+      labels:
+        app.kubernetes.io/managed-by: argocd-applicationset
+        runner-category: '{{category}}'
+        runner-profile: '{{profile}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm
+        targetRevision: main
+        path: charts/github-actions-runners
+        helm:
+          releaseName: '{{name}}-runners'
+          values: |
+            gha-runner-scale-set:
+              controllerServiceAccount:
+                namespace: arc-systems
+                name: arc-gha-rs-controller
+
+              githubConfigUrl: "https://github.com/{{org}}/{{name}}"
+              runnerScaleSetName: "{{name}}-runners"
+
+              minRunners: {{scaling.minRunners}}
+              maxRunners: {{scaling.maxRunners}}
+
+              githubConfigSecret:
+                github_token: "PLACEHOLDER"  # Managed separately via script
+
+              template:
+                spec:
+                  {{- if eq category "frontend" }}
+                  containers:
+                  - name: runner
+                    image: ghcr.io/actions/actions-runner:latest
+                    command:
+                    - /home/runner/run.sh
+                    env:
+                    - name: ACTIONS_RUNNER_LABELS
+                      value: "{{name}}-runners,{{#labels}}{{.}},{{/labels}}self-hosted,linux,x64"
+                    - name: RUNNER_NAME_PREFIX
+                      value: "{{name}}"
+                    - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+                      value: "false"
+                    - name: DOCKER_HOST
+                      value: "tcp://localhost:2375"
+                    - name: NODE_OPTIONS
+                      value: "--max-old-space-size=6144"
+                    - name: NPM_CONFIG_CACHE
+                      value: "/home/runner/_work/_npm-cache"
+                    resources:
+                      requests:
+                        cpu: "{{profiles.medium.cpu.request}}"
+                        memory: "{{profiles.medium.memory.request}}"
+                      limits:
+                        cpu: "{{profiles.medium.cpu.limit}}"
+                        memory: "{{profiles.medium.memory.limit}}"
+                    volumeMounts:
+                    - name: work
+                      mountPath: /home/runner/_work
+                    - name: npm-cache
+                      mountPath: /home/runner/_work/_npm-cache
+                    - name: docker-certs
+                      mountPath: /certs/client
+                      readOnly: true
+                  - name: dind
+                    image: docker:24-dind
+                    command:
+                    - dockerd
+                    args:
+                    - --host=tcp://0.0.0.0:2375
+                    - --storage-driver=overlay2
+                    env:
+                    - name: DOCKER_TLS_CERTDIR
+                      value: ""
+                    resources:
+                      requests:
+                        cpu: "{{dind.profiles.medium.cpu.request}}"
+                        memory: "{{dind.profiles.medium.memory.request}}"
+                      limits:
+                        cpu: "{{dind.profiles.medium.cpu.limit}}"
+                        memory: "{{dind.profiles.medium.memory.limit}}"
+                    securityContext:
+                      privileged: true
+                    volumeMounts:
+                    - name: docker-storage
+                      mountPath: /var/lib/docker
+                    - name: docker-certs
+                      mountPath: /certs/client
+                  volumes:
+                  - name: work
+                    emptyDir:
+                      sizeLimit: "{{profiles.medium.storage.work}}"
+                  - name: npm-cache
+                    emptyDir:
+                      sizeLimit: "{{profiles.medium.storage.cache}}"
+                  - name: docker-storage
+                    emptyDir:
+                      sizeLimit: "{{dind.profiles.medium.storage}}"
+                  - name: docker-certs
+                    emptyDir: {}
+                  {{- end }}
+
+                  {{- if eq category "backend" }}
+                  containers:
+                  - name: runner
+                    image: ghcr.io/actions/actions-runner:latest
+                    command:
+                    - /home/runner/run.sh
+                    env:
+                    - name: ACTIONS_RUNNER_LABELS
+                      value: "{{name}}-runners,{{#labels}}{{.}},{{/labels}}self-hosted,linux,x64"
+                    - name: RUNNER_NAME_PREFIX
+                      value: "{{name}}"
+                    - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+                      value: "false"
+                    {{- if environment }}
+                    {{#environment}}
+                    - name: {{@key}}
+                      value: "{{.}}"
+                    {{/environment}}
+                    {{- end }}
+                    resources:
+                      requests:
+                        cpu: "{{profiles.medium.cpu.request}}"
+                        memory: "{{profiles.medium.memory.request}}"
+                      limits:
+                        cpu: "{{profiles.medium.cpu.limit}}"
+                        memory: "{{profiles.medium.memory.limit}}"
+                    volumeMounts:
+                    - name: work
+                      mountPath: /home/runner/_work
+                  volumes:
+                  - name: work
+                    {{- if storage }}
+                    ephemeral:
+                      volumeClaimTemplate:
+                        spec:
+                          accessModes:
+                          - ReadWriteOnce
+                          resources:
+                            requests:
+                              storage: "{{storage.work}}"
+                          storageClassName: standard-rwo
+                    {{- else }}
+                    emptyDir:
+                      sizeLimit: "{{profiles.medium.storage.work}}"
+                    {{- end }}
+                  {{- end }}
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'arc-{{name}}-runners'
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - RespectIgnoreDifferences=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+      # Ignore differences in secrets (managed separately)
+      ignoreDifferences:
+      - group: ""
+        kind: Secret
+        name: '{{name}}-runners-gha-rs-github-secret'
+        jsonPointers:
+        - /data/github_token
