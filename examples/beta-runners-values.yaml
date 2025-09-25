@@ -7,7 +7,7 @@ gha-runner-scale-set:
     namespace: arc-systems
     name: arc-gha-rs-controller
   githubConfigUrl: "https://github.com/Matchpoint-AI/project-beta"
-  runnerScaleSetName: "arc-beta-runners-new"
+  runnerScaleSetName: "arc-beta-runners"
 
   githubConfigSecret:
     github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token

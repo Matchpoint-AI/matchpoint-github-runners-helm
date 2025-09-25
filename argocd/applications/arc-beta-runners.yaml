@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: arc-beta-runners-new
+  name: arc-beta-runners
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -12,7 +12,7 @@ spec:
     targetRevision: main
     path: charts/github-actions-runners
     helm:
-      releaseName: arc-beta-runners-new
+      releaseName: arc-beta-runners
       valueFiles:
         - ../../examples/beta-runners-values.yaml
       parameters:
@@ -20,7 +20,7 @@ spec:
           value: "$ARGOCD_ENV_GITHUB_TOKEN"
   destination:
     server: https://kubernetes.default.svc
-    namespace: arc-beta-runners-new
+    namespace: arc-beta-runners
   syncPolicy:
     automated:
       prune: true
