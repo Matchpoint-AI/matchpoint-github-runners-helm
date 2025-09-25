@@ -62,7 +62,7 @@ gha-runner-scale-set:
               - ReadWriteOnce
               resources:
                 requests:
-                  storage: 35Gi
+                  storage: 20Gi
               storageClassName: ssd
       - name: build-cache
         emptyDir:
