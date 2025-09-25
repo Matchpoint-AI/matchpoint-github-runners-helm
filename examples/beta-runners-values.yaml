@@ -21,20 +21,6 @@ gha-runner-scale-set:
 
   template:
     spec:
-      initContainers:
-      - name: setup-work-dir
-        image: busybox
-        command:
-        - sh
-        - -c
-        - |
-          mkdir -p /home/runner/_work/_tool
-          mkdir -p /home/runner/_work/_temp
-          mkdir -p /home/runner/_work/_actions
-          chmod -R 777 /home/runner/_work
-        volumeMounts:
-        - name: work
-          mountPath: /home/runner/_work
       containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
@@ -44,6 +30,8 @@ gha-runner-scale-set:
         env:
         - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
           value: "false"
+        - name: DOCKER_HOST
+          value: "tcp://localhost:2375"
         - name: ACTIONS_RUNNER_POD_NAME
           valueFrom:
             fieldRef:
@@ -56,21 +44,48 @@ gha-runner-scale-set:
           value: "/home/runner/_work/_pip-cache"
         resources:
           requests:
-            cpu: "2"      # Reduced for cluster capacity
-            memory: 4Gi   # Reduced for cluster capacity
+            cpu: "4"      # Matching working runners
+            memory: 8Gi   # Matching working runners
           limits:
-            cpu: "4"      # Reduced for cluster capacity
-            memory: 8Gi   # Reduced for cluster capacity
+            cpu: "6"      # Matching working runners
+            memory: 12Gi  # Matching working runners
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
-        - name: build-cache
-          mountPath: /home/runner/_work/_cache
+        - name: docker-certs
+          mountPath: /certs/client
+          readOnly: true
+      - name: dind
+        image: docker:24-dind
+        command:
+        - dockerd
+        args:
+        - --host=tcp://0.0.0.0:2375
+        - --storage-driver=overlay2
+        env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+        resources:
+          requests:
+            cpu: "2"
+            memory: 4Gi
+          limits:
+            cpu: "4"
+            memory: 8Gi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: docker-storage
+          mountPath: /var/lib/docker
+        - name: docker-certs
+          mountPath: /certs/client
       restartPolicy: Never
       volumes:
       - name: work
         emptyDir:
-          sizeLimit: 10Gi
-      - name: build-cache
+          sizeLimit: 25Gi
+      - name: docker-storage
         emptyDir:
-          sizeLimit: 5Gi
+          sizeLimit: 20Gi
+      - name: docker-certs
+        emptyDir: {}
