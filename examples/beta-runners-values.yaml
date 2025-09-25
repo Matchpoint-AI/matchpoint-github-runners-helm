@@ -15,9 +15,9 @@ gha-runner-scale-set:
   minRunners: 1      # Keep at least 1 runner warm
   maxRunners: 20
 
-  # Security context for beta runners
-  securityContext:
-    fsGroup: 123
+  # Security context for beta runners - removed to allow runner to work properly
+  # securityContext:
+  #   fsGroup: 123
 
   template:
     spec:
