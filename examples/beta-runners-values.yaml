@@ -63,7 +63,7 @@ gha-runner-scale-set:
               resources:
                 requests:
                   storage: 35Gi
-              storageClassName: standard-rwo
+              storageClassName: ssd
       - name: build-cache
         emptyDir:
           sizeLimit: 15Gi
