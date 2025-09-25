@@ -21,6 +21,20 @@ gha-runner-scale-set:
 
   template:
     spec:
+      initContainers:
+      - name: setup-work-dir
+        image: busybox
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /home/runner/_work/_tool
+          mkdir -p /home/runner/_work/_temp
+          mkdir -p /home/runner/_work/_actions
+          chmod -R 777 /home/runner/_work
+        volumeMounts:
+        - name: work
+          mountPath: /home/runner/_work
       containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
