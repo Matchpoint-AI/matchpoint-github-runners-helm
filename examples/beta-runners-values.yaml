@@ -42,11 +42,11 @@ gha-runner-scale-set:
           value: "/home/runner/_work/_pip-cache"
         resources:
           requests:
-            cpu: "8"      # Upgraded to xlarge profile
-            memory: 16Gi  # Upgraded to xlarge profile
+            cpu: "2"      # Reduced for cluster capacity
+            memory: 4Gi   # Reduced for cluster capacity
           limits:
-            cpu: "12"     # Upgraded to xlarge profile
-            memory: 24Gi  # Upgraded to xlarge profile
+            cpu: "4"      # Reduced for cluster capacity
+            memory: 8Gi   # Reduced for cluster capacity
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
