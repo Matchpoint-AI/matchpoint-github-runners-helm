@@ -20,7 +20,7 @@ spec:
           value: "$ARGOCD_ENV_GITHUB_TOKEN"
   destination:
     server: https://kubernetes.default.svc
-    namespace: arc-beta-runners
+    namespace: arc-beta-runners-v2
   syncPolicy:
     automated:
       prune: true

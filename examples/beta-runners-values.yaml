@@ -10,7 +10,7 @@ gha-runner-scale-set:
   runnerScaleSetName: "arc-beta-runners"
 
   githubConfigSecret:
-    github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token
+    github_token: "YOUR_GITHUB_TOKEN_HERE"  # Overridden by ArgoCD
 
   minRunners: 1      # Keep at least 1 runner warm
   maxRunners: 20
