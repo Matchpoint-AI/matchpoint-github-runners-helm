@@ -15,9 +15,11 @@ spec:
       releaseName: arc-beta-runners
       valueFiles:
         - ../../examples/beta-runners-values.yaml
-      parameters:
-        - name: gha-runner-scale-set.githubConfigSecret.github_token
-          value: "$ARGOCD_ENV_GITHUB_TOKEN"
+  ignoreDifferences:
+    - kind: Secret
+      name: arc-beta-runners-gha-rs-github-secret
+      jsonPointers:
+        - /data/github_token
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-beta-runners-v2
@@ -29,6 +31,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
