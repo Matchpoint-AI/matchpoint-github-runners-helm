@@ -55,15 +55,8 @@ gha-runner-scale-set:
       restartPolicy: Never
       volumes:
       - name: work
-        ephemeral:
-          volumeClaimTemplate:
-            spec:
-              accessModes:
-              - ReadWriteOnce
-              resources:
-                requests:
-                  storage: 20Gi
-              storageClassName: ssd
+        emptyDir:
+          sizeLimit: 10Gi
       - name: build-cache
         emptyDir:
-          sizeLimit: 15Gi
+          sizeLimit: 5Gi
