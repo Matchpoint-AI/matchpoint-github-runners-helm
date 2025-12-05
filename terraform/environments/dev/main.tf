@@ -1,6 +1,7 @@
 ################################################################################
 # Development Environment - Rackspace Spot GitHub Runners
 ################################################################################
+# Deploys self-hosted GitHub Actions runners on Rackspace Spot infrastructure.
 # This environment deploys the complete GitHub Actions runner infrastructure:
 #
 # 1. Rackspace Spot Cloudspace (managed Kubernetes)
