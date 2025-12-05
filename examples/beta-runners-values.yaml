@@ -14,7 +14,7 @@ gha-runner-scale-set:
   # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-beta-runners-v2 --from-literal=github_token='ghp_...'
   githubConfigSecret: arc-org-github-secret
 
-  minRunners: 1      # Keep at least 1 runner warm
+  minRunners: 0      # Scale to zero when idle (cost optimization)
   maxRunners: 20
 
   # Security context for beta runners - removed to allow runner to work properly
@@ -39,18 +39,20 @@ gha-runner-scale-set:
             fieldRef:
               fieldPath: metadata.name
         - name: NODE_OPTIONS
-          value: "--max-old-space-size=8192"  # Increased memory
+          value: "--max-old-space-size=8192"  # Match Cloud Run memory settings
         - name: PYTHONUNBUFFERED
           value: "1"
         - name: PIP_CACHE_DIR
           value: "/home/runner/_work/_pip-cache"
         resources:
+          # Optimized based on Cloud Run runner specs (2 CPU, 8Gi - tested to avoid OOM on npm ci)
+          # See Issue #45 for analysis
           requests:
-            cpu: "4"      # Matching working runners
-            memory: 8Gi   # Matching working runners
+            cpu: "2"        # Cloud Run uses 2 cores
+            memory: 8Gi     # Cloud Run uses 8Gi (OOM-tested, see project-beta#26)
           limits:
-            cpu: "6"      # Matching working runners
-            memory: 12Gi  # Matching working runners
+            cpu: "2"
+            memory: 8Gi
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
@@ -68,12 +70,13 @@ gha-runner-scale-set:
         - name: DOCKER_TLS_CERTDIR
           value: ""
         resources:
+          # DinD sidecar for Docker builds - sized for typical CI docker operations
           requests:
+            cpu: "1"
+            memory: 2Gi
+          limits:
             cpu: "2"
             memory: 4Gi
-          limits:
-            cpu: "4"
-            memory: 8Gi
         securityContext:
           privileged: true
         volumeMounts:
