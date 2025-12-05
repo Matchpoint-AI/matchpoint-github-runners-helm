@@ -1,5 +1,6 @@
 # Values file for Matchpoint API runners
 # Deploy with: helm install arc-api-runners ./charts/github-actions-runners -f examples/api-runners-values.yaml
+# Uses custom image with PostgreSQL 14 + pgvector for pytest-postgresql tests
 
 gha-runner-scale-set:
   # Controller service account configuration
@@ -19,8 +20,8 @@ gha-runner-scale-set:
     spec:
       containers:
       - name: runner
-        image: ghcr.io/actions/actions-runner:latest
-        imagePullPolicy: IfNotPresent  # Faster startup
+        image: ghcr.io/matchpoint-ai/api-runner:latest
+        imagePullPolicy: Always  # Always pull to get latest image updates
         command:
         - /home/runner/run.sh
         env:
