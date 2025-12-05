@@ -15,11 +15,8 @@ spec:
       releaseName: arc-beta-runners
       valueFiles:
         - ../../examples/beta-runners-values.yaml
-  ignoreDifferences:
-    - kind: Secret
-      name: arc-beta-runners-gha-rs-github-secret
-      jsonPointers:
-        - /data/github_token
+  # Pre-defined secret arc-org-github-secret is not managed by ArgoCD
+  # It must be created manually in the cluster with the org-level PAT
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-beta-runners-v2
@@ -31,7 +28,6 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
