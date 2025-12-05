@@ -107,9 +107,13 @@ jobs:
         id: plan
         if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
         run: |
+          # During PR validation, skip ArgoCD module (requires existing cluster)
+          # ArgoCD will be deployed during terraform apply after cluster creation
           terraform plan -no-color -out=tfplan \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
-            -var="github_token=${{ secrets.GH_TOKEN }}"
+            -var="github_token=${{ secrets.GH_TOKEN }}" \
+            -target=module.cloudspace \
+            -target=module.nodepool
         continue-on-error: true
 
       - name: Update PR with Plan
