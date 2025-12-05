@@ -1,27 +1,18 @@
 # Custom Runner Images
 
-This directory contains Dockerfiles for custom GitHub Actions runner images.
+This directory can contain Dockerfiles for custom GitHub Actions runner images.
 
-## API Runner (`api-runner`)
+## Creating a Custom Image
 
-Custom runner image for the `project-beta-api` repository.
+If you need a custom runner image with specific tools:
 
-**Features:**
-- Based on `ghcr.io/actions/actions-runner:latest`
-- PostgreSQL 14 with pgvector extension pre-installed
-- Python 3 with pip and venv support
+1. Create a subdirectory with your image name (e.g., `images/my-runner/`)
+2. Add a `Dockerfile` based on `ghcr.io/actions/actions-runner:latest`
+3. Create a GitHub workflow to build and push the image
+4. Update the runner values to use the custom image
 
-**Purpose:**
-The API tests use pytest-postgresql which requires PostgreSQL binaries and extensions
-to be available on the runner. The pgvector extension is needed for the BrandEmbedding
-model which uses vector similarity search.
+## Note
 
-**Building locally:**
-```bash
-cd images/api-runner
-docker build -t api-runner:test .
-```
-
-**CI/CD:**
-Images are automatically built and pushed to `ghcr.io/matchpoint-ai/api-runner` when
-changes are pushed to the `main` branch.
+Most use cases are better served by using testcontainers or service containers
+in your CI workflow rather than custom runner images. Custom images add maintenance
+burden and can become outdated.
