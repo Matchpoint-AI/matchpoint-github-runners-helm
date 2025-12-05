@@ -69,15 +69,15 @@ variable "environment" {
 }
 
 variable "server_class" {
-  description = "Server class for runner nodes"
+  description = "Server class for runner nodes (gp.vs1.large-dfw: 4 vCPU, 15GB RAM)"
   type        = string
-  default     = "gp.vs1.medium-dfw"
+  default     = "gp.vs1.large-dfw"
 }
 
 variable "bid_price" {
-  description = "Bid price in USD per hour"
+  description = "Bid price in USD per hour (above 80th percentile for ~92% savings vs Cloud Run)"
   type        = number
-  default     = 0.03
+  default     = 0.04
 }
 
 variable "min_nodes" {

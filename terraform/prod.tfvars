@@ -11,8 +11,12 @@ ha_control_plane   = false
 environment = "prod"
 
 # Node pool configuration
-server_class = "gp.vs1.medium-dfw"
-bid_price    = 0.03
+# gp.vs1.large-dfw: 4 vCPU, 15GB RAM
+# 80th percentile: $0.031/hr, Market: $0.003/hr
+# Cloud Run equivalent: ~$0.48/hr
+# Savings: ~92% vs Cloud Run
+server_class = "gp.vs1.large-dfw"
+bid_price    = 0.04
 
 # Autoscaling
 min_nodes = 1
