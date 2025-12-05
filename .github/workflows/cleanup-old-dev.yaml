@@ -18,10 +18,17 @@ jobs:
           token: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
           EOF
 
+      - name: Get organization ID
+        id: org
+        run: |
+          ORG_ID=$(~/go/bin/spotctl organizations list -o json | jq -r '.[0].id')
+          echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
+          echo "Found organization: $ORG_ID"
+
       - name: List cloudspaces
-        run: ~/go/bin/spotctl cloudspaces list -o table
+        run: ~/go/bin/spotctl cloudspaces list --org ${{ steps.org.outputs.org_id }} -o table
 
       - name: Delete old dev cloudspace
         run: |
           echo "Deleting matchpoint-runners-dev cloudspace..."
-          ~/go/bin/spotctl cloudspaces delete matchpoint-runners-dev --force || echo "Cloudspace may not exist or already deleted"
+          ~/go/bin/spotctl cloudspaces delete matchpoint-runners-dev --org ${{ steps.org.outputs.org_id }} --force || echo "Cloudspace may not exist or already deleted"
