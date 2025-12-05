@@ -12,16 +12,25 @@ jobs:
         run: go install github.com/rackspace-spot/spotctl@latest
 
       - name: Configure spotctl
+        env:
+          SPOT_TOKEN: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
         run: |
           mkdir -p ~/.spotctl
-          cat > ~/.spotctl/config.yaml << EOF
-          token: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
-          EOF
+          echo "token: \"${SPOT_TOKEN}\"" > ~/.spotctl/config.yaml
+          echo "Config file created"
 
       - name: Get organization ID
         id: org
         run: |
-          ORG_ID=$(~/go/bin/spotctl organizations list -o json | jq -r '.[0].id')
+          # List orgs to get the ID
+          ~/go/bin/spotctl organizations list -o json > /tmp/orgs.json 2>&1 || true
+          echo "Organizations response:"
+          cat /tmp/orgs.json
+          ORG_ID=$(cat /tmp/orgs.json | jq -r '.[0].id // empty' 2>/dev/null)
+          if [ -z "$ORG_ID" ]; then
+            echo "Failed to get organization ID"
+            exit 1
+          fi
           echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
           echo "Found organization: $ORG_ID"
 
