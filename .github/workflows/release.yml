@@ -16,6 +16,7 @@ on:
 
 jobs:
   lint-test:
+    name: Lint & Test Charts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -52,6 +53,7 @@ jobs:
         if: github.event_name == 'pull_request'
 
   release:
+    name: Publish to GitHub Pages
     # depending on default permission settings for your org (contents being read-only or read-write for workloads), you will have to add permissions
     # see: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#modifying-the-permissions-for-the-github_token
     permissions:
