@@ -62,16 +62,6 @@ variable "labels" {
   default     = {}
 }
 
-variable "taints" {
-  description = "Kubernetes taints to apply to nodes"
-  type = list(object({
-    key    = string
-    value  = optional(string)
-    effect = string
-  }))
-  default = []
-}
-
 variable "annotations" {
   description = "Annotations to apply to nodes"
   type        = map(string)

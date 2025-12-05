@@ -35,15 +35,5 @@ resource "spot_spotnodepool" "main" {
     var.labels
   )
 
-  # Kubernetes taints (optional, for dedicated workloads)
-  dynamic "taints" {
-    for_each = var.taints
-    content {
-      key    = taints.value.key
-      value  = lookup(taints.value, "value", "")
-      effect = taints.value.effect
-    }
-  }
-
   annotations = var.annotations
 }
