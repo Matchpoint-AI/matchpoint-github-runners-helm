@@ -44,11 +44,11 @@ gha-runner-scale-set:
           value: "/home/runner/_work/_pip-cache"
         resources:
           requests:
-            cpu: "4"      # Matching working runners
-            memory: 8Gi   # Matching working runners
+            cpu: "1500m"  # Reduced to fit on 4 vCPU nodes
+            memory: 4Gi
           limits:
-            cpu: "6"      # Matching working runners
-            memory: 12Gi  # Matching working runners
+            cpu: "3"      # Allow bursting
+            memory: 8Gi
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
@@ -67,11 +67,11 @@ gha-runner-scale-set:
           value: ""
         resources:
           requests:
-            cpu: "2"
-            memory: 4Gi
+            cpu: "500m"   # Reduced to fit on 4 vCPU nodes
+            memory: 2Gi
           limits:
-            cpu: "4"
-            memory: 8Gi
+            cpu: "1"      # Allow bursting
+            memory: 4Gi
         securityContext:
           privileged: true
         volumeMounts:
