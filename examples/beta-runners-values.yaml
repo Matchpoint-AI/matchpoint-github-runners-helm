@@ -39,20 +39,20 @@ gha-runner-scale-set:
             fieldRef:
               fieldPath: metadata.name
         - name: NODE_OPTIONS
-          value: "--max-old-space-size=8192"  # Match Cloud Run memory settings
+          value: "--max-old-space-size=10240"  # Increased for ARC performance (Issue #1522)
         - name: PYTHONUNBUFFERED
           value: "1"
         - name: PIP_CACHE_DIR
           value: "/home/runner/_work/_pip-cache"
         resources:
-          # Optimized based on Cloud Run runner specs (2 CPU, 8Gi - tested to avoid OOM on npm ci)
-          # See Issue #45 for analysis
+          # Increased for ARC performance optimization (Issue #1522)
+          # Node capacity: 8 CPU, ~30Gi per node - leaving room for DinD sidecar
           requests:
-            cpu: "2"        # Cloud Run uses 2 cores
-            memory: 8Gi     # Cloud Run uses 8Gi (OOM-tested, see project-beta#26)
+            cpu: "4"        # Doubled from Cloud Run for faster CI
+            memory: 12Gi    # Increased for parallel test execution
           limits:
-            cpu: "2"
-            memory: 8Gi
+            cpu: "4"
+            memory: 12Gi
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
