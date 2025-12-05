@@ -75,9 +75,9 @@ variable "server_class" {
 }
 
 variable "bid_price" {
-  description = "Bid price in USD per hour (above 80th percentile for ~92% savings vs Cloud Run)"
+  description = "Bid price in USD per hour (~83% savings vs Cloud Run with higher priority)"
   type        = number
-  default     = 0.04
+  default     = 0.08
 }
 
 variable "min_nodes" {

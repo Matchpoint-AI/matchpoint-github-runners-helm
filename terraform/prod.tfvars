@@ -14,9 +14,9 @@ environment = "prod"
 # gp.vs1.large-dfw: 4 vCPU, 15GB RAM
 # 80th percentile: $0.031/hr, Market: $0.003/hr
 # Cloud Run equivalent: ~$0.48/hr
-# Savings: ~92% vs Cloud Run
+# Bid $0.08/hr = ~83% savings vs Cloud Run with higher priority
 server_class = "gp.vs1.large-dfw"
-bid_price    = 0.04
+bid_price    = 0.08
 
 # Autoscaling
 min_nodes = 1
