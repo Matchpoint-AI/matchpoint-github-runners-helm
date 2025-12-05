@@ -21,9 +21,11 @@ resource "helm_release" "argocd" {
   namespace        = var.namespace
   create_namespace = true
 
-  # Wait for ArgoCD to be ready before proceeding
-  wait    = true
-  timeout = 600
+  # Don't wait for pods - nodes may not be ready immediately after cloudspace creation
+  # ArgoCD pods will schedule automatically once nodepool nodes become available
+  # Ref: Issue #17 - ArgoCD helm install times out when nodepool has no ready nodes
+  wait    = false
+  timeout = 300
 
   values = [
     templatefile("${path.module}/values.yaml.tpl", {
