@@ -2,7 +2,7 @@
 
 CLI tool for inspecting and managing Rackspace Spot resources outside of Terraform.
 
-**Repository**: https://pkg.go.dev/github.com/rackspace-spot/spotctl
+**Repository**: <https://pkg.go.dev/github.com/rackspace-spot/spotctl>
 
 ## Why Use spotctl?
 
