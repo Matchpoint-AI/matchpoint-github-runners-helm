@@ -1,0 +1,158 @@
+################################################################################
+# Terraform CI/CD for Rackspace Spot Infrastructure
+################################################################################
+# This workflow manages the Rackspace Spot cloudspace infrastructure:
+# - terraform plan on PR
+# - terraform apply on merge to main
+#
+# Secrets required:
+# - RACKSPACE_SPOT_API_TOKEN (org secret)
+# - GH_TOKEN (for ArgoCD access)
+################################################################################
+
+name: Terraform
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform.yaml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform.yaml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+      action:
+        description: 'Terraform action'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: "1.6.6"
+  WORKING_DIR: "terraform/environments/dev"
+
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        env:
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+        run: |
+          terraform plan -no-color -out=tfplan \
+            -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
+            -var="github_token=${{ secrets.GH_TOKEN }}"
+        continue-on-error: true
+
+      - name: Update PR with Plan
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          github.event.inputs.action == 'apply'
+        run: |
+          terraform apply -auto-approve \
+            -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
+            -var="github_token=${{ secrets.GH_TOKEN }}"
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          terraform destroy -auto-approve \
+            -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
+            -var="github_token=${{ secrets.GH_TOKEN }}"
+
+      - name: Save Kubeconfig Artifact
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          github.event.inputs.action == 'apply'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kubeconfig
+          path: ${{ env.WORKING_DIR }}/kubeconfig-*.yaml
+          retention-days: 1
+          if-no-files-found: ignore
