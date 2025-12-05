@@ -5,6 +5,8 @@
 # - terraform plan on PR
 # - terraform apply on merge to main
 #
+# Uses terraform workspaces for environment isolation.
+#
 # Secrets required:
 # - RACKSPACE_SPOT_API_TOKEN (org secret)
 # - INFRA_GH_TOKEN (infrastructure account token for ArgoCD access)
@@ -32,12 +34,11 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy'
+        description: 'Environment/workspace to deploy'
         required: true
-        default: 'dev'
+        default: 'prod'
         type: choice
         options:
-          - dev
           - prod
       action:
         description: 'Terraform action'
@@ -56,7 +57,8 @@ permissions:
 
 env:
   TF_VERSION: "1.6.6"
-  WORKING_DIR: "terraform/environments/dev"
+  WORKING_DIR: "terraform"
+  TF_WORKSPACE: "prod"
 
 concurrency:
   group: terraform-${{ github.ref }}
@@ -117,6 +119,12 @@ jobs:
         id: init
         run: terraform init
 
+      - name: Select Workspace
+        id: workspace
+        run: |
+          WORKSPACE="${{ github.event.inputs.environment || env.TF_WORKSPACE }}"
+          terraform workspace select "$WORKSPACE" || terraform workspace new "$WORKSPACE"
+
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
@@ -125,9 +133,11 @@ jobs:
         id: plan
         if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
         run: |
+          WORKSPACE="${{ github.event.inputs.environment || env.TF_WORKSPACE }}"
           # During PR validation, skip ArgoCD module (requires existing cluster)
           # ArgoCD will be deployed during terraform apply after cluster creation
           terraform plan -no-color -out=tfplan \
+            -var-file="${WORKSPACE}.tfvars" \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
             -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -target=module.cloudspace \
@@ -173,8 +183,10 @@ jobs:
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           github.event.inputs.action == 'apply'
         run: |
+          WORKSPACE="${{ github.event.inputs.environment || env.TF_WORKSPACE }}"
           # Stage 1: Create cloudspace and nodepool first
           terraform apply -auto-approve \
+            -var-file="${WORKSPACE}.tfvars" \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
             -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}" \
@@ -186,8 +198,10 @@ jobs:
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           github.event.inputs.action == 'apply'
         run: |
+          WORKSPACE="${{ github.event.inputs.environment || env.TF_WORKSPACE }}"
           # Stage 2: Deploy ArgoCD after cluster is ready
           terraform apply -auto-approve \
+            -var-file="${WORKSPACE}.tfvars" \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
             -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}"
@@ -195,7 +209,9 @@ jobs:
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         run: |
+          WORKSPACE="${{ github.event.inputs.environment || env.TF_WORKSPACE }}"
           terraform destroy -auto-approve \
+            -var-file="${WORKSPACE}.tfvars" \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
             -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}"
