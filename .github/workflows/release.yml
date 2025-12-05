@@ -36,8 +36,8 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
 
-      - name: Run chart-testing (list)
-        run: ct list --config ct.yaml
+      - name: Run chart-testing (list-changed)
+        run: ct list-changed --config ct.yaml
 
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml
