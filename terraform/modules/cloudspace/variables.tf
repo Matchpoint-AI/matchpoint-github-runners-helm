@@ -36,12 +36,6 @@ variable "preemption_webhook" {
   default     = ""
 }
 
-variable "create_timeout" {
-  description = "Timeout for cloudspace creation"
-  type        = string
-  default     = "30m"
-}
-
 variable "write_kubeconfig_file" {
   description = "Write kubeconfig to a local file (for debugging)"
   type        = bool

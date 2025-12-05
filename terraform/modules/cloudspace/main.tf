@@ -20,10 +20,6 @@ resource "spot_cloudspace" "main" {
 
   # Optional: Slack/webhook notification for preemption events
   preemption_webhook = var.preemption_webhook
-
-  timeouts {
-    create = var.create_timeout
-  }
 }
 
 # Retrieve kubeconfig for the created cloudspace
