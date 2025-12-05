@@ -11,12 +11,12 @@ ha_control_plane   = false
 environment = "prod"
 
 # Node pool configuration
-# gp.vs1.large-dfw: 4 vCPU, 15GB RAM
-# 80th percentile: $0.031/hr, Market: $0.003/hr
+# gp.vs1.xlarge-dfw: 8 vCPU, 30GB RAM (matches Cloud Run runner specs)
+# Larger nodes required to fit runner pods (6 CPU request)
 # Cloud Run equivalent: ~$0.48/hr
-# Bid $0.08/hr = ~83% savings vs Cloud Run with higher priority
-server_class = "gp.vs1.large-dfw"
-bid_price    = 0.08
+# Bid $0.12/hr = ~75% savings vs Cloud Run with capacity priority
+server_class = "gp.vs1.xlarge-dfw"
+bid_price    = 0.12
 
 # Autoscaling
 min_nodes = 1
