@@ -143,6 +143,45 @@ Before committing:
 - [ ] Variables documented
 - [ ] Outputs defined for downstream consumers
 
+## Debugging with spotctl
+
+**IMPORTANT**: Use `spotctl` to verify actual resource state outside of Terraform.
+
+See full documentation: @.ai/tools/spotctl.md
+
+### Quick Reference
+
+```bash
+# Install
+go install github.com/rackspace-spot/spotctl@latest
+
+# List cloudspaces (use org NAME, not ID!)
+spotctl cloudspaces list --org matchpoint-ai -o table
+
+# Get cloudspace details
+spotctl cloudspaces get --name matchpoint-runners-prod --org matchpoint-ai -o json
+
+# Get kubeconfig for kubectl access
+spotctl cloudspaces get-config --name matchpoint-runners-prod --org matchpoint-ai > kubeconfig.yaml
+```
+
+### When to Use spotctl
+
+| Scenario | Action |
+|----------|--------|
+| Terraform plan shows unexpected changes | `spotctl cloudspaces list` to verify actual state |
+| "Resource not found" errors | Check if resource exists in API |
+| State corruption suspected | Compare `terraform state list` vs `spotctl` output |
+| Need to clean up orphans | `spotctl cloudspaces delete --name <name>` |
+| Debug node pool issues | Check `wonCount` and `status` in spotctl output |
+
+### Verify Terraform Changes
+
+```bash
+# After terraform apply
+spotctl cloudspaces list --org matchpoint-ai -o json | jq '.cloudspaces[] | {name, status, nodes: .spotNodepools[].wonCount}'
+```
+
 ## Error Recovery
 
 ### State Lock Issues
@@ -157,6 +196,10 @@ Comment: `[BLOCKED] State locked by LOCK_ID. Attempting force-unlock...`
 ### Plan Drift
 
 ```bash
+# First, check actual state with spotctl
+spotctl cloudspaces list --org matchpoint-ai -o table
+
+# Then refresh Terraform
 terraform refresh
 terraform plan
 ```
@@ -190,3 +233,4 @@ gh pr create --title "infra: Description" --body "Closes #123"
 - @.ai/agents/meta-orchestrator.md - Task coordination
 - @.ai/DIRECTIVES.md - Master execution plan
 - @.ai/GITHUB_COMMENTING.md - Full commenting protocol
+- @.ai/tools/spotctl.md - Rackspace Spot CLI for debugging
