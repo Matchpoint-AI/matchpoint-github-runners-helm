@@ -15,9 +15,9 @@ jobs:
         env:
           SPOT_TOKEN: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
         run: |
-          mkdir -p ~/.spotctl
-          echo "token: \"${SPOT_TOKEN}\"" > ~/.spotctl/config.yaml
-          echo "Config file created"
+          # Config file is at ~/.spot_config in YAML format
+          printf 'RefreshToken: "%s"\nAccessToken: "%s"\n' "${SPOT_TOKEN}" "${SPOT_TOKEN}" > ~/.spot_config
+          echo "Config file created at ~/.spot_config"
 
       - name: Get organization ID
         id: org
