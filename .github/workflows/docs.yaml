@@ -1,11 +1,24 @@
 name: Documentation
 
 on:
-  pull_request:
+  push:
+    branches:
+      - main
     paths:
       - '.ai/**'
       - '*.md'
       - 'docs/**'
+      - '.github/workflows/docs.yaml'
+      - '.markdownlint.json'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.ai/**'
+      - '*.md'
+      - 'docs/**'
+      - '.github/workflows/docs.yaml'
+      - '.markdownlint.json'
 
 jobs:
   lint:
