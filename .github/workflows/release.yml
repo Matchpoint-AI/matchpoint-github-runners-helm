@@ -7,6 +7,12 @@ on:
     paths:
       - 'charts/**'
       - '.github/workflows/release.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'charts/**'
+      - '.github/workflows/release.yml'
 
 jobs:
   lint-test:
@@ -36,6 +42,7 @@ jobs:
       - name: Run chart-testing (lint)
         run: ct lint --config ct.yaml
 
+      # Only test install on PRs (need kind cluster)
       - name: Create kind cluster
         uses: helm/kind-action@v1.10.0
         if: github.event_name == 'pull_request'
