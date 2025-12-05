@@ -95,7 +95,7 @@ module "nodepool" {
   bid_price       = var.bid_price
   environment     = "dev"
 
-  # Autoscaling: 0-10 nodes (scale-to-zero when idle)
+  # Autoscaling: 1-10 nodes (provider min is 1, no scale-to-zero)
   enable_autoscaling = true
   min_nodes          = var.min_nodes
   max_nodes          = var.max_nodes
@@ -191,9 +191,9 @@ variable "bid_price" {
 }
 
 variable "min_nodes" {
-  description = "Minimum nodes (0 for scale-to-zero)"
+  description = "Minimum nodes (provider minimum is 1)"
   type        = number
-  default     = 0
+  default     = 1
 }
 
 variable "max_nodes" {

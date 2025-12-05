@@ -38,9 +38,14 @@ variable "enable_autoscaling" {
 }
 
 variable "min_nodes" {
-  description = "Minimum number of nodes (0 for scale-to-zero)"
+  description = "Minimum number of nodes (provider minimum is 1)"
   type        = number
-  default     = 0
+  default     = 1
+
+  validation {
+    condition     = var.min_nodes >= 1
+    error_message = "Rackspace Spot requires min_nodes >= 1 (scale-to-zero not supported)"
+  }
 }
 
 variable "max_nodes" {
