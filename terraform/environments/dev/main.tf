@@ -87,6 +87,13 @@ module "cloudspace" {
 # Phase 2: Worker Node Pool
 #------------------------------------------------------------------------------
 
+# Import existing nodepool that was orphaned during initial apply
+# Remove this block after successful import
+import {
+  to = module.nodepool.spot_spotnodepool.main
+  id = "302ae86b-3841-449c-8f8e-1cacfc64b97b"
+}
+
 module "nodepool" {
   source = "../../modules/nodepool"
 
