@@ -31,10 +31,10 @@ output "server_class" {
 output "server_specs" {
   description = "Specifications of the selected server class"
   value = {
-    cpu            = data.spot_serverclass.selected.cpu
-    memory         = data.spot_serverclass.selected.memory
-    display_name   = data.spot_serverclass.selected.display_name
-    spot_price     = data.spot_serverclass.selected.spot_price_per_hour
-    available      = data.spot_serverclass.selected.available_count
+    cpu          = data.spot_serverclass.selected.cpu
+    memory       = data.spot_serverclass.selected.memory
+    display_name = data.spot_serverclass.selected.display_name
+    spot_price   = data.spot_serverclass.selected.spot_price_per_hour
+    available    = data.spot_serverclass.selected.available_count
   }
 }

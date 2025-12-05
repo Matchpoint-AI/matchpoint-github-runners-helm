@@ -17,11 +17,11 @@
 terraform {
   required_version = ">= 1.5.0"
 
-  # Backend configuration - update bucket name before use
-  # backend "gcs" {
-  #   bucket = "matchpoint-runners-tf-state"
-  #   prefix = "rackspace-spot/dev"
-  # }
+  # Remote state in GCS (same bucket as project-beta-runners)
+  backend "gcs" {
+    bucket = "project-beta-runners-tf-state"
+    prefix = "rackspace-spot/dev"
+  }
 
   required_providers {
     spot = {
@@ -53,16 +53,16 @@ provider "spot" {
 
 # Kubernetes and Helm providers configured after cloudspace creation
 provider "kubernetes" {
-  host                   = module.cloudspace.api_server_host
-  token                  = module.cloudspace.api_server_token
-  insecure               = module.cloudspace.insecure
+  host     = module.cloudspace.api_server_host
+  token    = module.cloudspace.api_server_token
+  insecure = module.cloudspace.insecure
 }
 
 provider "helm" {
   kubernetes {
-    host                   = module.cloudspace.api_server_host
-    token                  = module.cloudspace.api_server_token
-    insecure               = module.cloudspace.insecure
+    host     = module.cloudspace.api_server_host
+    token    = module.cloudspace.api_server_token
+    insecure = module.cloudspace.insecure
   }
 }
 
@@ -116,10 +116,10 @@ module "nodepool" {
 module "argocd" {
   source = "../../modules/argocd"
 
-  namespace           = "argocd"
-  github_token        = var.github_token
-  git_repo_url        = var.git_repo_url
-  git_target_revision = var.git_target_revision
+  namespace            = "argocd"
+  github_token         = var.github_token
+  git_repo_url         = var.git_repo_url
+  git_target_revision  = var.git_target_revision
   enable_bootstrap_app = true
 
   depends_on = [module.nodepool]

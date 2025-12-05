@@ -8,6 +8,10 @@
 # Secrets required:
 # - RACKSPACE_SPOT_API_TOKEN (org secret)
 # - GH_TOKEN (for ArgoCD access)
+#
+# Variables required (set in repo settings):
+# - WIF_PROVIDER: Workload Identity Federation provider
+# - WIF_SERVICE_ACCOUNT: GCP service account for Terraform
 ################################################################################
 
 name: Terraform
@@ -48,10 +52,15 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  id-token: write  # Required for Workload Identity Federation
 
 env:
   TF_VERSION: "1.6.6"
   WORKING_DIR: "terraform/environments/dev"
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   terraform:
@@ -65,6 +74,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -80,8 +98,6 @@ jobs:
       - name: Terraform Init
         id: init
         run: terraform init
-        env:
-          TF_TOKEN_app_terraform_io: ${{ secrets.TF_API_TOKEN }}
 
       - name: Terraform Validate
         id: validate
