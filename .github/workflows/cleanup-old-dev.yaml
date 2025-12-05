@@ -11,34 +11,32 @@ jobs:
       - name: Install spotctl
         run: go install github.com/rackspace-spot/spotctl@latest
 
-      - name: Configure spotctl
+      - name: Configure spotctl and get org
         env:
           SPOT_TOKEN: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
         run: |
-          # Config file is at ~/.spot_config in YAML format
-          # Fields (camelCase): org, refreshToken, accessToken, region
+          # Create initial config with just tokens
           printf 'refreshToken: "%s"\naccessToken: "%s"\n' "${SPOT_TOKEN}" "${SPOT_TOKEN}" > ~/.spot_config
-          echo "Config file created at ~/.spot_config"
 
-      - name: Get organization ID
-        id: org
-        run: |
-          # List orgs to get the ID
-          ~/go/bin/spotctl organizations list -o json > /tmp/orgs.json 2>&1 || true
-          echo "Organizations response:"
-          cat /tmp/orgs.json
-          ORG_ID=$(cat /tmp/orgs.json | jq -r '.[0].id // empty' 2>/dev/null)
-          if [ -z "$ORG_ID" ]; then
-            echo "Failed to get organization ID"
-            exit 1
-          fi
-          echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
+          # Get org ID
+          ORG_ID=$(~/go/bin/spotctl organizations list -o json | jq -r '.[0].id')
           echo "Found organization: $ORG_ID"
 
+          # Update config with org
+          printf 'org: "%s"\nrefreshToken: "%s"\naccessToken: "%s"\n' "${ORG_ID}" "${SPOT_TOKEN}" "${SPOT_TOKEN}" > ~/.spot_config
+          echo "Config updated with org"
+
       - name: List cloudspaces
-        run: ~/go/bin/spotctl cloudspaces list --org ${{ steps.org.outputs.org_id }} -o table
+        run: |
+          echo "Listing cloudspaces..."
+          ~/go/bin/spotctl cloudspaces list -o table || true
 
       - name: Delete old dev cloudspace
         run: |
-          echo "Deleting matchpoint-runners-dev cloudspace..."
-          ~/go/bin/spotctl cloudspaces delete matchpoint-runners-dev --org ${{ steps.org.outputs.org_id }} --force || echo "Cloudspace may not exist or already deleted"
+          echo "Attempting to delete matchpoint-runners-dev cloudspace..."
+          ~/go/bin/spotctl cloudspaces delete matchpoint-runners-dev --force && echo "Deleted successfully" || echo "Cloudspace may not exist or already deleted"
+
+      - name: Verify deletion
+        run: |
+          echo "Current cloudspaces:"
+          ~/go/bin/spotctl cloudspaces list -o table || true
