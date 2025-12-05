@@ -7,10 +7,7 @@ output "name" {
   value       = spot_spotnodepool.main.name
 }
 
-output "id" {
-  description = "ID of the node pool"
-  value       = spot_spotnodepool.main.id
-}
+# Note: id attribute is deprecated in provider, use name instead
 
 output "bid_status" {
   description = "Current bid status"

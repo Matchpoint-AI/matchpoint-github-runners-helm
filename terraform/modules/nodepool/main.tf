@@ -35,5 +35,6 @@ resource "spot_spotnodepool" "main" {
     var.labels
   )
 
-  annotations = var.annotations
+  # Only set annotations if non-empty (provider bug: empty map becomes null)
+  annotations = length(var.annotations) > 0 ? var.annotations : null
 }
