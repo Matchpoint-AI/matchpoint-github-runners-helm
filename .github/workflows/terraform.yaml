@@ -77,7 +77,6 @@ jobs:
           filters: |
             terraform:
               - 'terraform/**'
-              - '.github/workflows/terraform.yaml'
 
   terraform:
     name: Terraform
