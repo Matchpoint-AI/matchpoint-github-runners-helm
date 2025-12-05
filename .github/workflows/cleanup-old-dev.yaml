@@ -1,0 +1,27 @@
+name: Cleanup Old Dev Cloudspace
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Delete old matchpoint-runners-dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install spotctl
+        run: go install github.com/rackspace-spot/spotctl@latest
+
+      - name: Configure spotctl
+        run: |
+          mkdir -p ~/.spotctl
+          cat > ~/.spotctl/config.yaml << EOF
+          token: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
+          EOF
+
+      - name: List cloudspaces
+        run: ~/go/bin/spotctl cloudspaces list -o table
+
+      - name: Delete old dev cloudspace
+        run: |
+          echo "Deleting matchpoint-runners-dev cloudspace..."
+          ~/go/bin/spotctl cloudspaces delete matchpoint-runners-dev --force || echo "Cloudspace may not exist or already deleted"
