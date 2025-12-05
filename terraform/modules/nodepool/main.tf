@@ -47,8 +47,3 @@ resource "spot_spotnodepool" "main" {
 
   annotations = var.annotations
 }
-
-# Look up server class specifications for reference
-data "spot_serverclass" "selected" {
-  name = var.server_class
-}

@@ -251,11 +251,6 @@ output "nodepool_bid_status" {
   value       = module.nodepool.bid_status
 }
 
-output "server_specs" {
-  description = "Server class specifications"
-  value       = module.nodepool.server_specs
-}
-
 output "argocd_namespace" {
   description = "ArgoCD namespace"
   value       = module.argocd.namespace
