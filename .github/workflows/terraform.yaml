@@ -7,7 +7,8 @@
 #
 # Secrets required:
 # - RACKSPACE_SPOT_API_TOKEN (org secret)
-# - GH_TOKEN (for ArgoCD access)
+# - INFRA_GH_TOKEN (infrastructure account token for ArgoCD access)
+# - SLACK_PREEMPTION_WEBHOOK (optional, for preemption alerts)
 #
 # Variables required (set in repo settings):
 # - WIF_PROVIDER: Workload Identity Federation provider
@@ -111,7 +112,7 @@ jobs:
           # ArgoCD will be deployed during terraform apply after cluster creation
           terraform plan -no-color -out=tfplan \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
-            -var="github_token=${{ secrets.GH_TOKEN }}" \
+            -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -target=module.cloudspace \
             -target=module.nodepool
         continue-on-error: true
@@ -150,21 +151,37 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-      - name: Terraform Apply
+      - name: Terraform Apply - Infrastructure
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           github.event.inputs.action == 'apply'
         run: |
+          # Stage 1: Create cloudspace and nodepool first
           terraform apply -auto-approve \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
-            -var="github_token=${{ secrets.GH_TOKEN }}"
+            -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
+            -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}" \
+            -target=module.cloudspace \
+            -target=module.nodepool
+
+      - name: Terraform Apply - ArgoCD
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          github.event.inputs.action == 'apply'
+        run: |
+          # Stage 2: Deploy ArgoCD after cluster is ready
+          terraform apply -auto-approve \
+            -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
+            -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
+            -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}"
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         run: |
           terraform destroy -auto-approve \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
-            -var="github_token=${{ secrets.GH_TOKEN }}"
+            -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
+            -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}"
 
       - name: Save Kubeconfig Artifact
         if: |
