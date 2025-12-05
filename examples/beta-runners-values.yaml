@@ -1,4 +1,4 @@
-# Values file for Matchpoint Beta runners (Python with persistent storage)
+# Values file for Matchpoint Beta runners (Organization-level)
 # Deploy with: helm install arc-beta-runners ./charts/github-actions-runners -f examples/beta-runners-values.yaml
 
 gha-runner-scale-set:
@@ -6,7 +6,8 @@ gha-runner-scale-set:
   controllerServiceAccount:
     namespace: arc-systems
     name: arc-gha-rs-controller
-  githubConfigUrl: "https://github.com/Matchpoint-AI/project-beta"
+  # Organization-level runner to serve all repos (project-beta, project-beta-api, project-beta-frontend)
+  githubConfigUrl: "https://github.com/Matchpoint-AI"
   runnerScaleSetName: "arc-beta-runners"
 
   githubConfigSecret:
