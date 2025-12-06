@@ -1,0 +1,204 @@
+################################################################################
+# One-Time State Migration: GCS -> TFstate.dev
+################################################################################
+# This workflow migrates Terraform state from GCS to TFstate.dev.
+# DELETE THIS FILE after successful migration.
+#
+# Usage:
+# 1. Run this workflow via Actions tab (workflow_dispatch)
+# 2. Verify migration succeeded
+# 3. Merge PR with backend config changes
+# 4. Delete this workflow file
+################################################################################
+
+name: Migrate State to TFstate.dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (pull and validate only, no push)'
+        required: true
+        default: true
+        type: boolean
+      workspace:
+        description: 'Workspace to migrate (or "all")'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - default
+          - prod
+
+permissions:
+  contents: read
+  id-token: write  # Required for GCS auth via WIF
+
+env:
+  TFSTATE_DEV_API: "https://api.tfstate.dev/github/v1"
+  REPO_NAME: "Matchpoint-AI/matchpoint-github-runners-helm"
+
+jobs:
+  migrate:
+    name: Migrate State
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (for GCS access)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+          terraform_wrapper: false
+
+      - name: Determine Workspaces
+        id: workspaces
+        run: |
+          if [ "${{ inputs.workspace }}" = "all" ]; then
+            echo "workspaces=default prod" >> $GITHUB_OUTPUT
+          else
+            echo "workspaces=${{ inputs.workspace }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull State from GCS
+        id: pull
+        working-directory: terraform
+        run: |
+          mkdir -p ../state-backup
+
+          for ws in ${{ steps.workspaces.outputs.workspaces }}; do
+            echo "=== Pulling state for workspace: $ws ==="
+
+            # Initialize with GCS backend
+            terraform init -reconfigure
+
+            # Select or create workspace
+            terraform workspace select "$ws" || terraform workspace new "$ws"
+
+            # Pull state
+            terraform state pull > "../state-backup/${ws}.tfstate"
+
+            # Validate state file
+            if [ ! -s "../state-backup/${ws}.tfstate" ]; then
+              echo "ERROR: Empty state file for workspace $ws"
+              exit 1
+            fi
+
+            # Check it's valid JSON with terraform state
+            RESOURCE_COUNT=$(cat "../state-backup/${ws}.tfstate" | jq '.resources | length')
+            echo "Workspace $ws: $RESOURCE_COUNT resources"
+
+            # Store for summary
+            echo "${ws}=${RESOURCE_COUNT}" >> $GITHUB_OUTPUT
+          done
+
+          echo "=== State backup complete ==="
+          ls -la ../state-backup/
+
+      - name: Upload State Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfstate-backup-${{ github.run_id }}
+          path: state-backup/
+          retention-days: 30
+
+      - name: Push State to TFstate.dev
+        if: inputs.dry_run == false
+        env:
+          TF_HTTP_PASSWORD: ${{ secrets.INFRA_GH_TOKEN }}
+        run: |
+          for ws in ${{ steps.workspaces.outputs.workspaces }}; do
+            echo "=== Pushing state for workspace: $ws ==="
+
+            STATE_FILE="state-backup/${ws}.tfstate"
+
+            # TFstate.dev uses workspace as query param for non-default
+            if [ "$ws" = "default" ]; then
+              URL="${TFSTATE_DEV_API}"
+            else
+              URL="${TFSTATE_DEV_API}?workspace=${ws}"
+            fi
+
+            # Push state via HTTP PUT
+            HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -u "${REPO_NAME}:${TF_HTTP_PASSWORD}" \
+              --data-binary "@${STATE_FILE}" \
+              "${URL}")
+
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "SUCCESS: State pushed for workspace $ws (HTTP $HTTP_CODE)"
+            else
+              echo "ERROR: Failed to push state for workspace $ws (HTTP $HTTP_CODE)"
+              cat /tmp/response.txt
+              exit 1
+            fi
+          done
+
+      - name: Verify Migration
+        if: inputs.dry_run == false
+        env:
+          TF_HTTP_PASSWORD: ${{ secrets.INFRA_GH_TOKEN }}
+        run: |
+          for ws in ${{ steps.workspaces.outputs.workspaces }}; do
+            echo "=== Verifying state for workspace: $ws ==="
+
+            if [ "$ws" = "default" ]; then
+              URL="${TFSTATE_DEV_API}"
+            else
+              URL="${TFSTATE_DEV_API}?workspace=${ws}"
+            fi
+
+            # Fetch state from TFstate.dev
+            curl -s -o "/tmp/verify-${ws}.tfstate" \
+              -u "${REPO_NAME}:${TF_HTTP_PASSWORD}" \
+              "${URL}"
+
+            # Compare resource counts
+            ORIGINAL_COUNT=$(cat "state-backup/${ws}.tfstate" | jq '.resources | length')
+            MIGRATED_COUNT=$(cat "/tmp/verify-${ws}.tfstate" | jq '.resources | length')
+
+            if [ "$ORIGINAL_COUNT" = "$MIGRATED_COUNT" ]; then
+              echo "SUCCESS: Workspace $ws verified ($MIGRATED_COUNT resources)"
+            else
+              echo "ERROR: Resource count mismatch for $ws (original: $ORIGINAL_COUNT, migrated: $MIGRATED_COUNT)"
+              exit 1
+            fi
+          done
+
+          echo ""
+          echo "=========================================="
+          echo "MIGRATION COMPLETE"
+          echo "=========================================="
+          echo "Next steps:"
+          echo "1. Merge the PR with backend config changes"
+          echo "2. Verify terraform plan shows no changes"
+          echo "3. Delete this migration workflow"
+          echo "=========================================="
+
+      - name: Dry Run Summary
+        if: inputs.dry_run == true
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "DRY RUN COMPLETE"
+          echo "=========================================="
+          echo "State files backed up and validated:"
+          ls -la state-backup/
+          echo ""
+          echo "To perform actual migration:"
+          echo "1. Re-run this workflow with dry_run=false"
+          echo "=========================================="
