@@ -103,17 +103,26 @@ jobs:
         run: terraform fmt -check -recursive
         continue-on-error: true
 
-      - name: Terraform Init
-        id: init
-        run: terraform init
-
-      - name: Select Workspace
+      - name: Determine Workspace
         id: workspace
         run: |
           # Use explicit workspace from input for workflow_dispatch, otherwise prod for PRs/push
           WORKSPACE="${{ github.event.inputs.environment || 'prod' }}"
-          terraform workspace select "$WORKSPACE" || terraform workspace new "$WORKSPACE"
           echo "workspace=$WORKSPACE" >> $GITHUB_OUTPUT
+
+      - name: Terraform Init
+        id: init
+        run: |
+          # HTTP backend requires workspace in URL (no native workspace support)
+          WORKSPACE="${{ steps.workspace.outputs.workspace }}"
+          if [ "$WORKSPACE" = "default" ]; then
+            terraform init
+          else
+            terraform init \
+              -backend-config="address=https://api.tfstate.dev/github/v1?workspace=${WORKSPACE}" \
+              -backend-config="lock_address=https://api.tfstate.dev/github/v1/lock?workspace=${WORKSPACE}" \
+              -backend-config="unlock_address=https://api.tfstate.dev/github/v1/lock?workspace=${WORKSPACE}"
+          fi
 
       - name: Terraform Validate
         id: validate
