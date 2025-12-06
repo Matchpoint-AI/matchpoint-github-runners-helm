@@ -4,11 +4,10 @@
 # This workflow migrates Terraform state from GCS to TFstate.dev.
 # DELETE THIS FILE after successful migration.
 #
-# Usage:
-# 1. Run this workflow via Actions tab (workflow_dispatch)
-# 2. Verify migration succeeded
-# 3. Merge PR with backend config changes
-# 4. Delete this workflow file
+# Strategy: Uses terraform state pull/push for reliable migration
+# 1. Pull state from GCS using current backend
+# 2. Reconfigure to HTTP backend
+# 3. Push state using terraform state push
 ################################################################################
 
 name: Migrate State to TFstate.dev
@@ -36,7 +35,6 @@ permissions:
   id-token: write  # Required for GCS auth via WIF
 
 env:
-  TFSTATE_DEV_API: "https://api.tfstate.dev/github/v1"
   REPO_NAME: "Matchpoint-AI/matchpoint-github-runners-helm"
 
 jobs:
@@ -116,59 +114,81 @@ jobs:
 
       - name: Push State to TFstate.dev
         if: inputs.dry_run == false
+        working-directory: terraform
         env:
           TF_HTTP_PASSWORD: ${{ secrets.INFRA_GH_TOKEN }}
         run: |
+          # Remove GCS backend block from versions.tf
+          # Keep everything else intact
+          sed -i '/# Remote state in GCS/,/^  }$/d' versions.tf
+          sed -i '/backend "gcs"/,/}/d' versions.tf
+
+          # Create HTTP backend config file
+          cat > backend-http.tf << 'EOF'
+          terraform {
+            backend "http" {
+              address        = "https://api.tfstate.dev/github/v1"
+              lock_address   = "https://api.tfstate.dev/github/v1/lock"
+              unlock_address = "https://api.tfstate.dev/github/v1/lock"
+              lock_method    = "PUT"
+              unlock_method  = "DELETE"
+              username       = "Matchpoint-AI/matchpoint-github-runners-helm"
+            }
+          }
+          EOF
+
           for ws in ${{ steps.workspaces.outputs.workspaces }}; do
             echo "=== Pushing state for workspace: $ws ==="
 
-            STATE_FILE="state-backup/${ws}.tfstate"
+            STATE_FILE="../state-backup/${ws}.tfstate"
 
-            # TFstate.dev uses workspace as query param for non-default
+            # Clean up any existing terraform state
+            rm -rf .terraform .terraform.lock.hcl
+
+            # Initialize with HTTP backend
+            # For non-default workspace, pass workspace name via backend-config
             if [ "$ws" = "default" ]; then
-              URL="${TFSTATE_DEV_API}"
+              terraform init -reconfigure -input=false
             else
-              URL="${TFSTATE_DEV_API}?workspace=${ws}"
+              terraform init -reconfigure -input=false \
+                -backend-config="address=https://api.tfstate.dev/github/v1?workspace=${ws}" \
+                -backend-config="lock_address=https://api.tfstate.dev/github/v1/lock?workspace=${ws}" \
+                -backend-config="unlock_address=https://api.tfstate.dev/github/v1/lock?workspace=${ws}"
             fi
 
-            # Push state via HTTP PUT
-            HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
-              -X POST \
-              -H "Content-Type: application/json" \
-              -u "${REPO_NAME}:${TF_HTTP_PASSWORD}" \
-              --data-binary "@${STATE_FILE}" \
-              "${URL}")
+            # Push the state file using terraform state push
+            echo "Pushing state from $STATE_FILE"
+            terraform state push -force "$STATE_FILE"
 
-            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-              echo "SUCCESS: State pushed for workspace $ws (HTTP $HTTP_CODE)"
-            else
-              echo "ERROR: Failed to push state for workspace $ws (HTTP $HTTP_CODE)"
-              cat /tmp/response.txt
-              exit 1
-            fi
+            echo "SUCCESS: State pushed for workspace $ws"
           done
 
       - name: Verify Migration
         if: inputs.dry_run == false
+        working-directory: terraform
         env:
           TF_HTTP_PASSWORD: ${{ secrets.INFRA_GH_TOKEN }}
         run: |
           for ws in ${{ steps.workspaces.outputs.workspaces }}; do
             echo "=== Verifying state for workspace: $ws ==="
 
+            # Clean and reinit
+            rm -rf .terraform .terraform.lock.hcl
+
             if [ "$ws" = "default" ]; then
-              URL="${TFSTATE_DEV_API}"
+              terraform init -reconfigure -input=false
             else
-              URL="${TFSTATE_DEV_API}?workspace=${ws}"
+              terraform init -reconfigure -input=false \
+                -backend-config="address=https://api.tfstate.dev/github/v1?workspace=${ws}" \
+                -backend-config="lock_address=https://api.tfstate.dev/github/v1/lock?workspace=${ws}" \
+                -backend-config="unlock_address=https://api.tfstate.dev/github/v1/lock?workspace=${ws}"
             fi
 
-            # Fetch state from TFstate.dev
-            curl -s -o "/tmp/verify-${ws}.tfstate" \
-              -u "${REPO_NAME}:${TF_HTTP_PASSWORD}" \
-              "${URL}"
+            # Pull from new backend
+            terraform state pull > "/tmp/verify-${ws}.tfstate"
 
             # Compare resource counts
-            ORIGINAL_COUNT=$(cat "state-backup/${ws}.tfstate" | jq '.resources | length')
+            ORIGINAL_COUNT=$(cat "../state-backup/${ws}.tfstate" | jq '.resources | length')
             MIGRATED_COUNT=$(cat "/tmp/verify-${ws}.tfstate" | jq '.resources | length')
 
             if [ "$ORIGINAL_COUNT" = "$MIGRATED_COUNT" ]; then
@@ -184,7 +204,7 @@ jobs:
           echo "MIGRATION COMPLETE"
           echo "=========================================="
           echo "Next steps:"
-          echo "1. Merge the PR with backend config changes"
+          echo "1. Merge PR #53 with backend config changes"
           echo "2. Verify terraform plan shows no changes"
           echo "3. Delete this migration workflow"
           echo "=========================================="
