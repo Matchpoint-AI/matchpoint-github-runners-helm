@@ -78,9 +78,9 @@ module "argocd" {
   github_token        = var.github_token
   git_repo_url        = var.git_repo_url
   git_target_revision = var.git_target_revision
-  # Disabled: kubernetes_manifest requires CRDs which may not be ready immediately
-  # TODO: Enable after initial ArgoCD deploy, or use kubectl apply manually
-  enable_bootstrap_app = false
+  # Bootstrap application creates ArgoCD apps for ARC controller and runners
+  # This ensures runners are automatically deployed when infrastructure is provisioned
+  enable_bootstrap_app = true
 
   depends_on = [module.nodepool]
 }

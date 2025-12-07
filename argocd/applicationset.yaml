@@ -7,18 +7,12 @@ spec:
   generators:
   - list:
       elements:
-      - name: arc-frontend-runners
-        namespace: arc-frontend-runners
-        valuesFile: examples/frontend-runners-values.yaml
-        repo: project-beta-frontend
-      - name: arc-api-runners-v2
-        namespace: arc-api-runners-v2
-        valuesFile: examples/api-runners-values.yaml
-        repo: project-beta-api
+      # Org-level runner serves all repositories (project-beta, project-beta-api, project-beta-frontend)
+      # Deployed in arc-beta-runners-new namespace for backward compatibility
       - name: arc-beta-runners-new
         namespace: arc-beta-runners-new
         valuesFile: examples/beta-runners-values.yaml
-        repo: project-beta
+        repo: Matchpoint-AI
   template:
     metadata:
       name: '{{name}}'
