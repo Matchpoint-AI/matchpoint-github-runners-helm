@@ -11,7 +11,7 @@ gha-runner-scale-set:
   runnerScaleSetName: "arc-beta-runners"
 
   # Reference pre-defined secret with org-level PAT (created manually in cluster)
-  # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-beta-runners-v2 --from-literal=github_token='ghp_...'
+  # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-beta-runners-new --from-literal=github_token='ghp_...'
   githubConfigSecret: arc-org-github-secret
 
   minRunners: 0      # Scale to zero when idle (cost optimization)

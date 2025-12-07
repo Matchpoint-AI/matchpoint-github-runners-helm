@@ -37,5 +37,11 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.4"
     }
+    # Required: State references random provider resources from legacy configuration
+    # TODO: Remove after running `terraform state rm` on random resources
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
   }
 }
