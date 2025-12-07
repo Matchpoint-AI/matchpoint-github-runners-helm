@@ -14,9 +14,9 @@ environment = "prod"
 # gp.vs1.xlarge-dfw: 8 vCPU, 30GB RAM (matches Cloud Run runner specs)
 # Larger nodes required to fit runner pods (6 CPU request)
 # Cloud Run equivalent: ~$0.48/hr
-# Bid $0.12/hr = ~75% savings vs Cloud Run with capacity priority
+# Bid $0.20/hr = ~58% savings vs Cloud Run with better capacity priority
 server_class = "gp.vs1.xlarge-dfw"
-bid_price    = 0.12
+bid_price    = 0.20
 
 # Autoscaling
 min_nodes = 1
