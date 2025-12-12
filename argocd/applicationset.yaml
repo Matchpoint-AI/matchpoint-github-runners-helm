@@ -9,7 +9,9 @@ spec:
       elements:
       # Org-level runner serves all repositories (project-beta, project-beta-api, project-beta-frontend)
       # Using arc-runners namespace where the GitHub PAT secret exists
-      - name: arc-runners
+      # CRITICAL: name MUST match runnerScaleSetName in values file (arc-beta-runners)
+      # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/121
+      - name: arc-beta-runners
         namespace: arc-runners
         valuesFile: examples/runners-values.yaml
         repo: Matchpoint-AI
