@@ -23,8 +23,8 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 2      # Increased for pre-warming
-      maxRunners: 15
+      minRunners: 2      # Keep warm to avoid cold-start queue delays (Issue #68)
+      maxRunners: 20     # Increased from 15 for better parallelism
     profile: large       # Upgraded from medium for better performance
     labels:
       - arc-beta-runners
