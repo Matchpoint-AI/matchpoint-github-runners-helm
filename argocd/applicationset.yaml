@@ -26,9 +26,11 @@ spec:
           releaseName: '{{name}}'
           valueFiles:
             - '../../{{valuesFile}}'
-          parameters:
-            - name: gha-runner-scale-set.githubConfigSecret.github_token
-              value: "$ARGOCD_ENV_GITHUB_TOKEN"
+          # NOTE: Do NOT use parameters to set githubConfigSecret.github_token
+          # The values file uses githubConfigSecret: "arc-org-github-secret" (string)
+          # which references a pre-created secret. Using parameters would conflict
+          # because it expects githubConfigSecret to be a map, not a string.
+          # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/89
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{namespace}}'
