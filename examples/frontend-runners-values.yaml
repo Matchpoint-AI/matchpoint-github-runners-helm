@@ -12,7 +12,7 @@ gha-runner-scale-set:
   githubConfigSecret:
     github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token
 
-  minRunners: 2      # Increased for pre-warming
+  minRunners: 3      # Baseline capacity to reduce cold start delays (Issue #101)
   maxRunners: 15
 
   template:
