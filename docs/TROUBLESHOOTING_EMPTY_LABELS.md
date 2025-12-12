@@ -45,12 +45,12 @@ gh api /orgs/Matchpoint-AI/actions/runners --jq '.runners[] | {name, status, lab
 kubectl get autoscalingrunnerset -A
 ```
 
-2. **Check runner pods:**
+1. **Check runner pods:**
 ```bash
 kubectl get pods -n arc-runners -l app.kubernetes.io/component=runner
 ```
 
-3. **Check ARC controller logs:**
+1. **Check ARC controller logs:**
 ```bash
 kubectl logs -n arc-systems -l app.kubernetes.io/component=controller-manager --tail=100
 ```
