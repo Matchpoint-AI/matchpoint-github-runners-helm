@@ -165,6 +165,7 @@ jobs:
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Comprehensive deployment guide
 - [SCALING.md](SCALING.md) - Scaling strategies and resource management
 - [argocd/README.md](argocd/README.md) - ArgoCD management and GitOps workflow
+- [docs/DOCKER_IN_DOCKER.md](docs/DOCKER_IN_DOCKER.md) - Docker-in-Docker configuration and testcontainers guide
 - [docs/TROUBLESHOOTING_EMPTY_LABELS.md](docs/TROUBLESHOOTING_EMPTY_LABELS.md) - Runner label troubleshooting
 - [docs/KUBECONFIG_WORKFLOW.md](docs/KUBECONFIG_WORKFLOW.md) - Cluster access guide
 - [AGENTS.md](AGENTS.md) - AI agent instructions for infrastructure work
