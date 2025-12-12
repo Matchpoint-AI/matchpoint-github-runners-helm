@@ -49,13 +49,13 @@ helm install arc-api-runners matchpoint-runners/github-actions-runners \
   --create-namespace
 ```
 
-#### Beta Repository (Python with Persistent Storage)
+#### Organization-level Runners (Python with Persistent Storage)
 
 ```bash
-helm install arc-beta-runners matchpoint-runners/github-actions-runners \
-  -f examples/beta-runners-values.yaml \
+helm install arc-runners matchpoint-runners/github-actions-runners \
+  -f examples/runners-values.yaml \
   --set gha-runner-scale-set.githubConfigSecret.github_token=YOUR_TOKEN \
-  -n arc-beta-runners \
+  -n arc-runners \
   --create-namespace
 ```
 
@@ -112,7 +112,7 @@ kubectl get autoscalingrunnerset -A
 # Check runner pods
 kubectl get pods -n arc-frontend-runners
 kubectl get pods -n arc-api-runners
-kubectl get pods -n arc-beta-runners
+kubectl get pods -n arc-runners
 
 # View controller logs
 kubectl logs -n arc-systems deployment/arc-gha-rs-controller
@@ -133,7 +133,7 @@ kubectl logs -n arc-systems deployment/arc-gha-rs-controller
 
 3. Verify GitHub token permissions
 
-### Storage issues (Beta runners)
+### Storage issues (Organization runners)
 
 1. Check if storage class exists:
    ```bash
@@ -142,7 +142,7 @@ kubectl logs -n arc-systems deployment/arc-gha-rs-controller
 
 2. View PVC status:
    ```bash
-   kubectl get pvc -n arc-beta-runners
+   kubectl get pvc -n arc-runners
    ```
 
 ## Scaling

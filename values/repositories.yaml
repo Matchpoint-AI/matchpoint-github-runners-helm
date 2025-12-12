@@ -17,7 +17,7 @@ repositories:
       - x64
 
   # Backend/API repositories
-  # Note: project-beta-api uses arc-beta-runners (same as other repos)
+  # Note: project-beta-api uses arc-runners (organization-level runners)
   # Tests use testcontainers with pgvector/pgvector:pg16 image for database
   - name: project-beta-api
     org: Matchpoint-AI
@@ -27,7 +27,7 @@ repositories:
       maxRunners: 20     # Increased from 15 for better parallelism
     profile: large       # Upgraded from medium for better performance
     labels:
-      - arc-beta-runners
+      - arc-runners
       - self-hosted
       - linux
       - x64
@@ -41,7 +41,7 @@ repositories:
       maxRunners: 20
     profile: xlarge      # Upgraded from large for maximum performance
     labels:
-      - arc-beta-runners
+      - arc-runners
       - self-hosted
       - linux
       - x64

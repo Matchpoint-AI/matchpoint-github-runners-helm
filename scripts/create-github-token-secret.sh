@@ -30,8 +30,8 @@ kubectl create secret generic arc-api-runners-v2-gha-rs-github-secret \
     --from-literal=github_token="$GITHUB_TOKEN" \
     --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl create secret generic arc-beta-runners-new-gha-rs-github-secret \
-    -n arc-beta-runners-new \
+kubectl create secret generic arc-runners-gha-rs-github-secret \
+    -n arc-runners \
     --from-literal=github_token="$GITHUB_TOKEN" \
     --dry-run=client -o yaml | kubectl apply -f -
 

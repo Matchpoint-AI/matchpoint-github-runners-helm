@@ -134,7 +134,7 @@ presets:
   beta:
     enabled: false
     githubConfigUrl: "https://github.com/Matchpoint-AI/project-beta"
-    runnerScaleSetName: "arc-beta-runners-new"
+    runnerScaleSetName: "arc-runners"
     minRunners: 0
     maxRunners: 20
     template:

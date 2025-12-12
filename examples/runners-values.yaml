@@ -1,5 +1,5 @@
-# Values file for Matchpoint Beta runners (Organization-level)
-# Deploy with: helm install arc-beta-runners ./charts/github-actions-runners -f examples/beta-runners-values.yaml
+# Values file for Matchpoint Organization-level runners
+# Deploy with: helm install arc-runners ./charts/github-actions-runners -f examples/runners-values.yaml
 
 gha-runner-scale-set:
   # Controller service account configuration
@@ -8,10 +8,10 @@ gha-runner-scale-set:
     name: arc-gha-rs-controller
   # Organization-level runner to serve all repos (project-beta, project-beta-api, project-beta-frontend)
   githubConfigUrl: "https://github.com/Matchpoint-AI"
-  runnerScaleSetName: "arc-beta-runners"
+  runnerScaleSetName: "arc-runners"
 
   # Reference pre-defined secret with org-level PAT (created manually in cluster)
-  # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-beta-runners-new --from-literal=github_token='ghp_...'
+  # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-runners --from-literal=github_token='ghp_...'
   githubConfigSecret: arc-org-github-secret
 
   minRunners: 0      # Scale to zero when idle for cost savings (Issue #70)

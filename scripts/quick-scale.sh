@@ -47,7 +47,7 @@ get_namespace() {
             echo "arc-api-runners-v2"
             ;;
         beta)
-            echo "arc-beta-runners-new"
+            echo "arc-runners"
             ;;
         *)
             echo "arc-${repo}-runners"

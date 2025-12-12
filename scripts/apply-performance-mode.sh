@@ -176,7 +176,7 @@ EOF
 
     # Increase runner counts for pre-warming
     if kubectl get autoscalingrunnerset -A >/dev/null 2>&1; then
-        for namespace in arc-frontend-runners arc-api-runners-v2 arc-beta-runners-new; do
+        for namespace in arc-frontend-runners arc-api-runners-v2 arc-runners; do
             if kubectl get namespace $namespace >/dev/null 2>&1; then
                 kubectl patch autoscalingrunnerset -n $namespace \
                     $(kubectl get autoscalingrunnerset -n $namespace -o name 2>/dev/null | cut -d/ -f2) \
