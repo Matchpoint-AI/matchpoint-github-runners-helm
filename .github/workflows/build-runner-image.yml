@@ -20,7 +20,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/arc-runner
+  # Note: must be lowercase for Docker compatibility
+  IMAGE_NAME: matchpoint-ai/arc-runner
 
 permissions:
   contents: read
