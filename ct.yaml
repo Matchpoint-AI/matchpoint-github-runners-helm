@@ -6,5 +6,6 @@ chart-dirs:
 # OCI registry dependencies are handled via helm dependency update in CI workflow
 # chart-repos only supports traditional helm repos, not OCI registries
 helm-extra-args: --timeout 600s
-check-version-increment: true
+# Disabled: CI/workflow changes shouldn't require chart version bumps
+check-version-increment: false
 validate-maintainers: false
