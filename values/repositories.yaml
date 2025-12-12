@@ -7,7 +7,7 @@ repositories:
     org: Matchpoint-AI
     category: frontend
     scaling:
-      minRunners: 0      # Scale to zero for cost savings (Issue #70)
+      minRunners: 1      # Keep 1 runner warm to reduce cold start (Issue #101)
       maxRunners: 15
     profile: large       # Upgraded from medium for better performance
     labels:
@@ -23,7 +23,7 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 0      # Scale to zero for cost savings (Issue #70)
+      minRunners: 1      # Keep 1 runner warm to reduce cold start (Issue #101)
       maxRunners: 20     # Increased from 15 for better parallelism
     profile: large       # Upgraded from medium for better performance
     labels:
