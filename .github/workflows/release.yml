@@ -53,7 +53,7 @@ jobs:
         run: ct list-changed --config ct.yaml
 
       - name: Run chart-testing (lint)
-        run: ct lint --config ct.yaml --skip-dependency-update
+        run: ct lint --config ct.yaml
 
       # Only test install on PRs (need kind cluster)
       - name: Create kind cluster
@@ -61,7 +61,7 @@ jobs:
         if: github.event_name == 'pull_request'
 
       - name: Run chart-testing (install)
-        run: ct install --config ct.yaml --skip-dependency-update
+        run: ct install --config ct.yaml
         if: github.event_name == 'pull_request'
 
   release:
