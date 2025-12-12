@@ -8,7 +8,7 @@ gha-runner-scale-set:
     name: arc-gha-rs-controller
   # Organization-level runner to serve all repos (project-beta, project-beta-api, project-beta-frontend)
   githubConfigUrl: "https://github.com/Matchpoint-AI"
-  runnerScaleSetName: "arc-beta-runners"  # Must match workflow runs-on labels
+  runnerScaleSetName: "arc-runners"  # Must match workflow runs-on labels AND ArgoCD releaseName
 
   # Reference pre-defined secret with org-level PAT (created manually in cluster)
   # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-runners --from-literal=github_token='ghp_...'
@@ -30,6 +30,11 @@ gha-runner-scale-set:
         command:
         - /home/runner/run.sh
         env:
+        # NOTE: ACTIONS_RUNNER_LABELS does not work with ARC
+        # ARC only uses runnerScaleSetName as the GitHub label
+        # See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/using-actions-runner-controller-runners-in-a-workflow
+        - name: RUNNER_NAME_PREFIX
+          value: "arc-beta"
         - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
           value: "false"
         - name: DOCKER_HOST

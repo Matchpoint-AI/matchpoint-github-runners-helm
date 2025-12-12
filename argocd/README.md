@@ -2,25 +2,54 @@
 
 This directory contains ArgoCD manifests for managing GitHub Actions Runner infrastructure using GitOps.
 
+## App of Apps Pattern
+
+This repository implements the **App of Apps pattern**, where a single root application manages all child applications, including ArgoCD itself.
+
+See [APP_OF_APPS.md](./APP_OF_APPS.md) for detailed documentation on the App of Apps pattern.
+
 ## Architecture
 
 ```
-ArgoCD (GitOps Controller)
-    ├── arc-controller (ARC Controller)
-    └── github-runners (ApplicationSet)
-        ├── arc-frontend-runners
-        ├── arc-api-runners-v2
-        └── arc-runners
+root (App of Apps)
+├── argocd (ArgoCD manages itself)
+├── arc-controller (ARC Controller)
+└── github-runners (ApplicationSet)
+    └── arc-runners (Org-level runners)
 ```
 
 ## Setup
 
 ### Prerequisites
-- ArgoCD installed in the cluster
-- GitHub Personal Access Token with appropriate permissions
-- Access to the Kubernetes cluster
+- Kubernetes cluster with kubectl access
+- GitHub Personal Access Token with `repo` and `admin:org` permissions
 
-### Quick Setup
+### Recommended: App of Apps Bootstrap (New)
+
+The modern approach using the App of Apps pattern:
+
+```bash
+# 1. Install ArgoCD initially (one-time)
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# 2. Create GitHub token secrets
+kubectl create secret generic github-token \
+  -n argocd \
+  --from-literal=token=YOUR_GITHUB_TOKEN
+
+kubectl create namespace arc-runners
+kubectl create secret generic arc-org-github-secret \
+  -n arc-runners \
+  --from-literal=github_token=YOUR_GITHUB_TOKEN
+
+# 3. Bootstrap everything with one command
+kubectl apply -f argocd/root-app.yaml
+```
+
+That's it! The root application will deploy ArgoCD self-management, ARC controller, and all runners.
+
+### Alternative: Legacy Setup Script
 
 Run the setup script with your GitHub token:
 
@@ -33,6 +62,8 @@ This will:
 2. Store the GitHub token securely
 3. Create ArgoCD applications for all runners
 4. Enable auto-sync and self-healing
+
+**Note**: The legacy approach uses individual application files. The App of Apps pattern is recommended for new installations.
 
 ## Manual Setup
 

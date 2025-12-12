@@ -7,7 +7,7 @@ gha-runner-scale-set:
     namespace: arc-systems
     name: arc-gha-rs-controller
   githubConfigUrl: "https://github.com/Matchpoint-AI/project-beta-frontend"
-  runnerScaleSetName: "arc-frontend-runners"
+  runnerScaleSetName: "arc-beta-runners"  # Must match workflow runs-on labels
 
   githubConfigSecret:
     github_token: "YOUR_GITHUB_TOKEN_HERE"  # Replace with actual token
@@ -24,8 +24,9 @@ gha-runner-scale-set:
         command:
         - /home/runner/run.sh
         env:
-        - name: ACTIONS_RUNNER_LABELS
-          value: "arc-frontend-runners,self-hosted,linux,x64"
+        # NOTE: ACTIONS_RUNNER_LABELS does not work with ARC
+        # ARC only uses runnerScaleSetName as the GitHub label
+        # See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/using-actions-runner-controller-runners-in-a-workflow
         - name: RUNNER_NAME_PREFIX
           value: "arc-frontend"
         - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER

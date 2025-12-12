@@ -1,8 +1,13 @@
+# GitHub Runners ApplicationSet
+# Manages multiple runner deployments using the list generator pattern
+---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: github-runners
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"  # Deploy after ARC controller
 spec:
   generators:
   - list:

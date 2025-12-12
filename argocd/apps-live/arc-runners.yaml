@@ -12,6 +12,9 @@ spec:
     targetRevision: main
     path: charts/github-actions-runners
     helm:
+      # CRITICAL: releaseName MUST match runnerScaleSetName in values file
+      # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/89
+      # Using arc-runners to match existing deployment and frontend workflows
       releaseName: arc-runners
       valueFiles:
         - ../../examples/runners-values.yaml
@@ -29,6 +32,7 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
+      - PruneLast=true
     retry:
       limit: 5
       backoff:
@@ -36,6 +40,8 @@ spec:
         factor: 2
         maxDuration: 3m
   ignoreDifferences:
+    # Ignore github secrets to prevent token leakage in diffs
+    # NOTE: Secret names follow pattern: {releaseName}-gha-rs-github-secret
     - group: ""
       kind: Secret
       name: arc-runners-gha-rs-github-secret

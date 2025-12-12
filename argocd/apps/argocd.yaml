@@ -1,0 +1,102 @@
+# ArgoCD Self-Management Application
+# This allows ArgoCD to manage its own installation and configuration
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Deploy first (before other apps)
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/argoproj/argo-helm
+    targetRevision: 7.7.12  # Pin to a stable version
+    chart: argo-cd
+    helm:
+      # Use values that match your existing ArgoCD installation
+      # Customize these based on your cluster requirements
+      values: |
+        global:
+          domain: argocd.example.com
+
+        configs:
+          params:
+            server.insecure: true  # Set to false if using TLS
+            # Enable ApplicationSet controller
+            applicationsetcontroller.enable.progressive.syncs: true
+
+          cm:
+            # Resource tracking method
+            application.resourceTrackingMethod: "annotation+label"
+            # Reconciliation timeout
+            timeout.reconciliation: "180s"
+            timeout.hard.reconciliation: "0"
+
+        server:
+          service:
+            type: LoadBalancer  # or ClusterIP/NodePort based on your setup
+
+          # Enable metrics
+          metrics:
+            enabled: true
+
+        controller:
+          metrics:
+            enabled: true
+
+        repoServer:
+          metrics:
+            enabled: true
+
+          # Important: This is where the GitHub token environment variable
+          # gets injected for private repo access
+          env:
+            - name: ARGOCD_ENV_GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: token
+                  optional: true
+
+        applicationSet:
+          metrics:
+            enabled: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      # Use ServerSideApply for better conflict resolution
+      - ServerSideApply=true
+      # Replace resources instead of trying to patch
+      - Replace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  revisionHistoryLimit: 10
+
+  # Ignore differences in auto-generated fields
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: "*"
+      kind: "*"
+      managedFieldsManagers:
+        - argocd-application-controller
