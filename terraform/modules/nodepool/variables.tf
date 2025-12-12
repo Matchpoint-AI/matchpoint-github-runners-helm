@@ -30,6 +30,12 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "purpose" {
+  description = "Purpose identifier for labeling (e.g., github-runners, app-hosting)"
+  type        = string
+  default     = "github-runners"
+}
+
 # Autoscaling configuration
 variable "enable_autoscaling" {
   description = "Enable autoscaling (mutually exclusive with desired_server_count)"

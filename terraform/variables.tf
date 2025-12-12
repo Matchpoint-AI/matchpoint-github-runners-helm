@@ -22,10 +22,16 @@ variable "github_token" {
 # Cloudspace Configuration
 #------------------------------------------------------------------------------
 
-variable "cloudspace_name" {
-  description = "Name of the Rackspace Spot cloudspace"
+variable "purpose" {
+  description = "Purpose of the cloudspace (e.g., github-runners, app-hosting, services)"
   type        = string
-  default     = "matchpoint-runners"
+  default     = "github-runners"
+}
+
+variable "cloudspace_name" {
+  description = "Name of the Rackspace Spot cloudspace (defaults to matchpoint-{purpose}-{region} pattern)"
+  type        = string
+  default     = ""
 }
 
 variable "region" {

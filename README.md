@@ -1,6 +1,6 @@
 # Matchpoint GitHub Runners Helm Charts
 
-This repository contains Helm charts for deploying GitHub Actions Runner Scale Set (ARC) in the Matchpoint-AI organization.
+This repository contains Helm charts and Terraform infrastructure for deploying GitHub Actions Runner Scale Set (ARC) in the Matchpoint-AI organization.
 
 ## Charts
 
@@ -13,8 +13,61 @@ This repository contains Helm charts for deploying GitHub Actions Runner Scale S
 charts/
 ├── github-actions-controller/     # ARC Controller chart
 └── github-actions-runners/        # Runner scale set chart
+terraform/                         # Rackspace Spot infrastructure
+├── modules/
+│   ├── cloudspace/               # Kubernetes cluster module
+│   ├── nodepool/                 # Worker node pool module
+│   └── argocd/                   # ArgoCD installation module
 docs/                              # Generated chart documentation
 index.yaml                         # Helm repository index
+```
+
+## Infrastructure Naming Convention
+
+This repository follows a standardized naming convention for multi-purpose infrastructure:
+
+### Cloudspace Naming Pattern
+
+```
+matchpoint-{purpose}-{region}-{env}
+```
+
+**Components:**
+- `matchpoint`: Organization prefix
+- `purpose`: Infrastructure purpose (e.g., `github-runners`, `app-hosting`, `services`)
+- `region`: Region abbreviation (e.g., `dfw`, `iad`, `ord`)
+- `env`: Environment (e.g., `prod`, `staging`, `dev`)
+
+**Examples:**
+- `matchpoint-github-runners-dfw-prod` - Production GitHub Actions runners in Dallas
+- `matchpoint-github-runners-dfw-dev` - Development GitHub Actions runners in Dallas
+- `matchpoint-app-hosting-iad-prod` - Production application hosting in Ashburn
+
+### Configuration
+
+The naming convention is configured via Terraform variables:
+
+```hcl
+# terraform/variables.tf
+variable "purpose" {
+  default = "github-runners"  # Override for different purposes
+}
+
+variable "region" {
+  default = "us-central-dfw-1"  # Extracted to "dfw"
+}
+
+# Environment is set via terraform workspace (prod, staging, dev)
+```
+
+### Node Labels
+
+Worker nodes are automatically labeled with purpose identifiers:
+
+```yaml
+matchpoint.ai/purpose: github-runners
+matchpoint.ai/environment: prod
+matchpoint.ai/runner-pool: github-actions
 ```
 
 ## Usage

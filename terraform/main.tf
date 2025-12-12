@@ -20,8 +20,12 @@
 ################################################################################
 
 locals {
-  # Append workspace name to cloudspace for environment isolation
-  cloudspace_name = "${var.cloudspace_name}-${terraform.workspace}"
+  # Extract region abbreviation from full region name (e.g., "us-central-dfw-1" -> "dfw")
+  region_abbr = element(split("-", var.region), 2)
+
+  # Build cloudspace name following pattern: matchpoint-{purpose}-{region}-{env}
+  # If cloudspace_name is explicitly provided, use it; otherwise construct from pattern
+  cloudspace_name = var.cloudspace_name != "" ? var.cloudspace_name : "matchpoint-${var.purpose}-${local.region_abbr}-${terraform.workspace}"
 }
 
 #------------------------------------------------------------------------------
@@ -52,6 +56,7 @@ module "nodepool" {
   server_class    = var.server_class
   bid_price       = var.bid_price
   environment     = var.environment
+  purpose         = var.purpose
 
   # Autoscaling configuration
   enable_autoscaling = true
