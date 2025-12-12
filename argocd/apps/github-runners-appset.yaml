@@ -1,0 +1,56 @@
+# GitHub Runners ApplicationSet
+# Manages multiple runner deployments using the list generator pattern
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: github-runners
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"  # Deploy after ARC controller
+spec:
+  generators:
+  - list:
+      elements:
+      # Org-level runner serves all repositories (project-beta, project-beta-api, project-beta-frontend)
+      # Using arc-runners namespace where the GitHub PAT secret exists
+      - name: arc-runners
+        namespace: arc-runners
+        valuesFile: examples/runners-values.yaml
+        repo: Matchpoint-AI
+  template:
+    metadata:
+      name: '{{name}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm
+        targetRevision: main
+        path: charts/github-actions-runners
+        helm:
+          releaseName: '{{name}}'
+          valueFiles:
+            - '../../{{valuesFile}}'
+          # NOTE: Do NOT use parameters to set githubConfigSecret.github_token
+          # The values file uses githubConfigSecret: "arc-org-github-secret" (string)
+          # which references a pre-created secret. Using parameters would conflict
+          # because it expects githubConfigSecret to be a map, not a string.
+          # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/89
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 10
