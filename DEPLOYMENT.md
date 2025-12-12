@@ -1,12 +1,65 @@
 # Deployment Guide
 
-This guide explains how to deploy GitHub Actions Runner Scale Sets using these Helm charts.
+This guide explains how to deploy GitHub Actions Runner Scale Sets using these Helm charts and Terraform infrastructure.
+
+## Infrastructure Overview
+
+The infrastructure uses a standardized naming convention to support multi-purpose deployments.
+
+### Naming Convention
+
+All cloudspaces follow the pattern: `matchpoint-{purpose}-{region}-{env}`
+
+- **Purpose**: Identifies the infrastructure use case (e.g., `github-runners`, `app-hosting`)
+- **Region**: Abbreviated region code (e.g., `dfw`, `iad`, `ord`)
+- **Environment**: Terraform workspace name (e.g., `prod`, `staging`, `dev`)
+
+**Example**: `matchpoint-github-runners-dfw-prod`
+
+This convention ensures:
+- Clear identification of cloudspace purpose at a glance
+- Easy filtering and management of multi-purpose infrastructure
+- Consistent labeling across resources
 
 ## Prerequisites
 
+### For Helm Deployment
 1. Kubernetes cluster with sufficient resources
 2. Helm 3.x installed
 3. GitHub Personal Access Token with `repo` and `admin:org` permissions
+
+### For Terraform Infrastructure
+1. Rackspace Spot API token
+2. Terraform >= 1.0
+3. GitHub token for ArgoCD repository access
+
+## Deployment Options
+
+### Option 1: Terraform Infrastructure (Recommended for New Deployments)
+
+Deploy complete infrastructure on Rackspace Spot with automatic naming:
+
+```bash
+cd terraform
+
+# Create environment-specific workspace
+terraform workspace new prod
+
+# Deploy with defaults (creates matchpoint-github-runners-dfw-prod)
+terraform apply -var-file=prod.tfvars
+
+# Or customize the purpose for different use cases
+terraform apply -var-file=prod.tfvars -var="purpose=app-hosting"
+# Creates: matchpoint-app-hosting-dfw-prod
+```
+
+The Terraform deployment automatically:
+1. Creates a Kubernetes cluster (cloudspace) with proper naming
+2. Provisions autoscaling worker nodes with purpose labels
+3. Installs ArgoCD for GitOps-based application management
+4. Configures node labels for workload targeting
+
+### Option 2: Helm-Only Deployment (Existing Kubernetes Cluster)
 
 ## Quick Start
 

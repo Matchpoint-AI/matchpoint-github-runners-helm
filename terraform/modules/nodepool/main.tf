@@ -31,6 +31,7 @@ resource "spot_spotnodepool" "main" {
     {
       "matchpoint.ai/runner-pool" = "github-actions"
       "matchpoint.ai/environment" = var.environment
+      "matchpoint.ai/purpose"     = var.purpose
     },
     var.labels
   )
