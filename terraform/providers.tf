@@ -22,3 +22,11 @@ provider "helm" {
     insecure = module.cloudspace.insecure
   }
 }
+
+# kubectl provider for ArgoCD Application CRDs (doesn't validate CRDs at plan time)
+provider "kubectl" {
+  host             = module.cloudspace.api_server_host
+  token            = module.cloudspace.api_server_token
+  insecure         = module.cloudspace.insecure
+  load_config_file = false
+}

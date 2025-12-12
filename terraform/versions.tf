@@ -43,5 +43,16 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.5"
     }
+    # kubectl provider for CRD resources that don't exist at plan time
+    # Unlike kubernetes_manifest, kubectl_manifest doesn't validate CRDs during plan
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = "~> 1.14"
+    }
+    # Required for time_sleep resource
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.10"
+    }
   }
 }

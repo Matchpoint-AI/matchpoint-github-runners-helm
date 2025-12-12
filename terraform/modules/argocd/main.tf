@@ -94,38 +94,34 @@ resource "time_sleep" "wait_for_argocd_crds" {
 }
 
 # Create the bootstrap application that points to this repository
-resource "kubernetes_manifest" "bootstrap_app" {
+# Using kubectl_manifest instead of kubernetes_manifest to avoid plan-time CRD validation
+# The kubernetes_manifest resource validates CRDs during plan, which fails when CRDs
+# don't exist yet (they're created by the helm chart during apply)
+resource "kubectl_manifest" "bootstrap_app" {
   count = var.enable_bootstrap_app ? 1 : 0
 
-  manifest = {
-    apiVersion = "argoproj.io/v1alpha1"
-    kind       = "Application"
-    metadata = {
-      name      = "matchpoint-runners-bootstrap"
-      namespace = var.namespace
-    }
-    spec = {
-      project = "default"
-      source = {
-        repoURL        = var.git_repo_url
-        targetRevision = var.git_target_revision
-        path           = "argocd"
-      }
-      destination = {
-        server    = "https://kubernetes.default.svc"
-        namespace = var.namespace
-      }
-      syncPolicy = {
-        automated = {
-          prune    = true
-          selfHeal = true
-        }
-        syncOptions = [
-          "CreateNamespace=true"
-        ]
-      }
-    }
-  }
+  yaml_body = <<-EOF
+    apiVersion: argoproj.io/v1alpha1
+    kind: Application
+    metadata:
+      name: matchpoint-runners-bootstrap
+      namespace: ${var.namespace}
+    spec:
+      project: default
+      source:
+        repoURL: ${var.git_repo_url}
+        targetRevision: ${var.git_target_revision}
+        path: argocd
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: ${var.namespace}
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+  EOF
 
   depends_on = [time_sleep.wait_for_argocd_crds]
 }
