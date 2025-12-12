@@ -117,7 +117,7 @@ kubectl get pods -A
 ### Method 4: Rackspace Spot Console (Manual)
 
 **Steps:**
-1. Login to https://spot.rackspace.com
+1. Login to <https://spot.rackspace.com>
 2. Navigate to your cloudspace
 3. Click "Download Kubeconfig"
 4. Save to local file
