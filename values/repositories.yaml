@@ -23,8 +23,8 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 2      # Increased for pre-warming
-      maxRunners: 15
+      minRunners: 2      # Aligned with beta-runners-values.yaml (Issue #72)
+      maxRunners: 20     # Increased to match beta pool capacity
     profile: large       # Upgraded from medium for better performance
     labels:
       - arc-beta-runners
@@ -37,7 +37,7 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 1      # Keep at least 1 runner warm
+      minRunners: 2      # Aligned with beta-runners-values.yaml (Issue #72)
       maxRunners: 20
     profile: xlarge      # Upgraded from large for maximum performance
     labels:
