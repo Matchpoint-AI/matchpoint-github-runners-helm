@@ -13,9 +13,9 @@ spec:
     path: charts/github-actions-runners
     helm:
       # CRITICAL: releaseName MUST match runnerScaleSetName in values file
-      # Mismatch causes ArgoCD to fail tracking resource name changes
       # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/89
-      releaseName: arc-beta-runners
+      # Using arc-runners to match existing deployment and frontend workflows
+      releaseName: arc-runners
       valueFiles:
         - ../../examples/runners-values.yaml
       # GitHub token should be configured as a secret in the cluster
@@ -44,6 +44,6 @@ spec:
     # NOTE: Secret names follow pattern: {releaseName}-gha-rs-github-secret
     - group: ""
       kind: Secret
-      name: arc-beta-runners-gha-rs-github-secret
+      name: arc-runners-gha-rs-github-secret
       jsonPointers:
         - /data/github_token
