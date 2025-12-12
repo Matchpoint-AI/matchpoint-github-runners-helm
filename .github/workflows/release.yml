@@ -40,11 +40,20 @@ jobs:
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
+      - name: Update chart dependencies
+        run: |
+          for chart in charts/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Updating dependencies for $chart"
+              helm dependency update "$chart"
+            fi
+          done
+
       - name: Run chart-testing (list-changed)
         run: ct list-changed --config ct.yaml
 
       - name: Run chart-testing (lint)
-        run: ct lint --config ct.yaml
+        run: ct lint --config ct.yaml --skip-dependency-update
 
       # Only test install on PRs (need kind cluster)
       - name: Create kind cluster
@@ -52,7 +61,7 @@ jobs:
         if: github.event_name == 'pull_request'
 
       - name: Run chart-testing (install)
-        run: ct install --config ct.yaml
+        run: ct install --config ct.yaml --skip-dependency-update
         if: github.event_name == 'pull_request'
 
   release:

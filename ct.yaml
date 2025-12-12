@@ -3,8 +3,8 @@ remote: origin
 target-branch: main
 chart-dirs:
   - charts
-chart-repos:
-  - actions=oci://ghcr.io/actions/actions-runner-controller-charts
+# OCI registry dependencies are handled via helm dependency update in CI workflow
+# chart-repos only supports traditional helm repos, not OCI registries
 helm-extra-args: --timeout 600s
 check-version-increment: true
 validate-maintainers: false
