@@ -1,0 +1,63 @@
+name: Validate Configuration
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'argocd/**'
+      - 'examples/**'
+      - 'values/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'argocd/**'
+      - 'examples/**'
+      - 'values/**'
+
+jobs:
+  validate-release-names:
+    name: Validate ArgoCD/Helm Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate release names match
+        run: ./scripts/validate-release-names.sh
+
+      - name: Comment on PR if validation fails
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## Configuration Validation Failed
+
+            The ArgoCD \`releaseName\` does not match \`runnerScaleSetName\` in the values file.
+
+            **This will cause runners to register with empty labels, causing all CI jobs to queue indefinitely!**
+
+            ### Fix Required
+
+            Ensure that in each ArgoCD Application:
+            \`\`\`yaml
+            helm:
+              releaseName: <NAME>  # Must match runnerScaleSetName
+            \`\`\`
+
+            Matches the corresponding values file:
+            \`\`\`yaml
+            gha-runner-scale-set:
+              runnerScaleSetName: "<NAME>"  # Must match releaseName
+            \`\`\`
+
+            See: [Troubleshooting Empty Labels](./docs/TROUBLESHOOTING_EMPTY_LABELS.md)
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

@@ -14,8 +14,9 @@ spec:
     helm:
       # CRITICAL: releaseName MUST match runnerScaleSetName in values file
       # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/89
-      # Using arc-runners to match existing deployment and frontend workflows
-      releaseName: arc-runners
+      # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/112
+      # runnerScaleSetName was changed to arc-beta-runners in PR #98 - must align
+      releaseName: arc-beta-runners
       valueFiles:
         - ../../examples/runners-values.yaml
       # GitHub token should be configured as a secret in the cluster
@@ -44,6 +45,6 @@ spec:
     # NOTE: Secret names follow pattern: {releaseName}-gha-rs-github-secret
     - group: ""
       kind: Secret
-      name: arc-runners-gha-rs-github-secret
+      name: arc-beta-runners-gha-rs-github-secret
       jsonPointers:
         - /data/github_token

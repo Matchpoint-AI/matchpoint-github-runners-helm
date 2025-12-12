@@ -12,7 +12,9 @@ spec:
     targetRevision: main
     path: charts/github-actions-runners
     helm:
-      releaseName: arc-frontend-runners
+      # CRITICAL: releaseName MUST match runnerScaleSetName in values file
+      # See: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/issues/112
+      releaseName: arc-beta-runners
       valueFiles:
         - ../../examples/frontend-runners-values.yaml
       # GitHub token should be configured as a secret in the cluster
@@ -36,8 +38,9 @@ spec:
         factor: 2
         maxDuration: 3m
   ignoreDifferences:
+    # NOTE: Secret names follow pattern: {releaseName}-gha-rs-github-secret
     - group: ""
       kind: Secret
-      name: arc-frontend-runners-gha-rs-github-secret
+      name: arc-beta-runners-gha-rs-github-secret
       jsonPointers:
         - /data/github_token

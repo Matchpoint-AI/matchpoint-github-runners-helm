@@ -30,9 +30,20 @@ Rackspace Spot Kubernetes         ← Underlying infrastructure
 
 | Pool | Target | Namespace | Repository |
 |------|--------|-----------|------------|
-| `arc-runners` | Org-level | `arc-runners` | All project-beta repos |
+| `arc-beta-runners` | Org-level | `arc-runners` | All project-beta repos |
 
-**Note:** As of Dec 12, 2025, all workflows use `arc-runners` label. The `runnerScaleSetName` and ArgoCD `releaseName` must both be `arc-runners`.
+**Note:** As of Dec 12, 2025, all workflows use `arc-beta-runners` label. The `runnerScaleSetName` and ArgoCD `releaseName` must both be `arc-beta-runners`.
+
+### CI Validation (Added Dec 12, 2025 - Issue #112)
+
+A CI validation check now prevents releaseName/runnerScaleSetName mismatches:
+- `scripts/validate-release-names.sh` - Validation script
+- `.github/workflows/validate.yaml` - Runs on PRs touching config files
+
+**Run locally:**
+```bash
+./scripts/validate-release-names.sh
+```
 
 ### Key Configuration Files
 
@@ -469,10 +480,15 @@ gh api /orgs/Matchpoint-AI/actions/runner-groups --jq '.runner_groups[].name'
 
 | Issue/PR | Repository | Description |
 |----------|------------|-------------|
+| #112 | matchpoint-github-runners-helm | CI jobs stuck - PR #98 broke alignment |
+| #113 | matchpoint-github-runners-helm | CI validation feature request |
+| #114 | matchpoint-github-runners-helm | PR: Fix releaseName alignment + CI validation |
 | #89 | matchpoint-github-runners-helm | Empty runner labels investigation |
 | #91 | matchpoint-github-runners-helm | PR: Change release name (superseded) |
 | #93 | matchpoint-github-runners-helm | PR: Revert to arc-runners naming - MERGED |
-| #94 | matchpoint-github-runners-helm | PR: Remove ApplicationSet parameters - MERGED (THE FIX) |
+| #94 | matchpoint-github-runners-helm | PR: Remove ApplicationSet parameters - MERGED |
+| #97 | matchpoint-github-runners-helm | PR: Standardize labels to arc-beta-runners |
+| #98 | matchpoint-github-runners-helm | PR: Update runnerScaleSetName (broke alignment!) |
 | #798 | project-beta-api | PR: Update workflow labels to arc-runners |
 | #72 | matchpoint-github-runners-helm | Root cause analysis for queuing |
 | #77 | matchpoint-github-runners-helm | Fix PR (minRunners: 0 → 2) - MERGED |
