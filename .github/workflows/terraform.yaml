@@ -190,6 +190,21 @@ jobs:
             -target=module.cloudspace \
             -target=module.nodepool
 
+      - name: Clean Orphaned ArgoCD State
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          github.event.inputs.action == 'apply'
+        run: |
+          # Remove orphaned ArgoCD resources from state if cluster was recreated
+          # This handles the case where cluster was destroyed but state retained references
+          # to ArgoCD CRD-based resources that no longer exist
+          echo "Checking for orphaned ArgoCD state entries..."
+          terraform state list | grep -E "module\.argocd\.kubernetes_manifest|module\.argocd\.kubernetes_config_map_v1_data" | while read resource; do
+            echo "Removing orphaned resource: $resource"
+            terraform state rm "$resource" || true
+          done
+        continue-on-error: true
+
       - name: Terraform Apply - ArgoCD
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
