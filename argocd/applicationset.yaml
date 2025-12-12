@@ -8,8 +8,9 @@ spec:
   - list:
       elements:
       # Org-level runner serves all repositories (project-beta, project-beta-api, project-beta-frontend)
-      - name: arc-runners
-        namespace: arc-runners
+      # Using arc-beta-runners-new namespace where the GitHub PAT secret exists
+      - name: arc-beta-runners-new
+        namespace: arc-beta-runners-new
         valuesFile: examples/runners-values.yaml
         repo: Matchpoint-AI
   template:
