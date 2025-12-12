@@ -14,7 +14,7 @@ gha-runner-scale-set:
   # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-runners --from-literal=github_token='ghp_...'
   githubConfigSecret: arc-org-github-secret
 
-  minRunners: 0      # Allow scale-to-zero; cold-start prewarming not required
+  minRunners: 3      # Baseline capacity to reduce cold start delays (Issue #101)
   maxRunners: 20
 
   # Security context for beta runners - removed to allow runner to work properly
