@@ -62,7 +62,7 @@ jobs:
   # Check if terraform files changed - provides early exit for non-terraform PRs
   changes:
     name: Check Changes
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, arc-runners]
     outputs:
       terraform: ${{ steps.filter.outputs.terraform }}
     steps:
@@ -76,7 +76,7 @@ jobs:
 
   terraform:
     name: Terraform
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, arc-runners]
     needs: changes
     # Skip if no terraform changes on PR, but always run on push/workflow_dispatch
     if: needs.changes.outputs.terraform == 'true' || github.event_name != 'pull_request'
