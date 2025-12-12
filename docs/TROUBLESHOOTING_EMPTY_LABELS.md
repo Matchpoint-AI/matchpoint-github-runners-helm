@@ -130,11 +130,31 @@ Should now show:
 
 ## Common Pitfalls
 
-### Pitfall 1: Release Name vs runnerScaleSetName
+### Pitfall 1: Release Name vs runnerScaleSetName (CRITICAL)
 
-- **Helm release name** determines the Kubernetes resource name
-- **runnerScaleSetName** determines the GitHub label
-- These can be different, but runnerScaleSetName must match your workflows
+**This is the #1 cause of persistent label issues!**
+
+- **Helm release name** (in ArgoCD): determines the Kubernetes resource tracking
+- **runnerScaleSetName** (in values): determines the AutoscalingRunnerSet metadata.name AND GitHub label
+
+**THESE MUST MATCH** when using ArgoCD!
+
+If they don't match:
+1. ArgoCD tracks resources under the old release name
+2. New resources are created with runnerScaleSetName
+3. Old resources may not be pruned correctly
+4. Result: stale AutoscalingRunnerSet with broken registration
+
+**Fix:**
+```yaml
+# argocd/apps-live/arc-runners.yaml
+helm:
+  releaseName: arc-beta-runners  # Must match runnerScaleSetName!
+
+# examples/runners-values.yaml
+gha-runner-scale-set:
+  runnerScaleSetName: "arc-beta-runners"  # Must match releaseName!
+```
 
 ### Pitfall 2: Multiple Label Requirements
 
