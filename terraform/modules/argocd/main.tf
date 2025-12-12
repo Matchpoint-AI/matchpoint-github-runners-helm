@@ -84,6 +84,15 @@ resource "kubernetes_config_map_v1_data" "argocd_cm" {
   depends_on = [helm_release.argocd]
 }
 
+# Wait for ArgoCD CRDs to be registered before creating Application resources
+# The helm chart installs CRDs, but Kubernetes API needs time to register them
+# This prevents "no matches for kind Application in group argoproj.io" errors
+resource "time_sleep" "wait_for_argocd_crds" {
+  depends_on = [helm_release.argocd]
+
+  create_duration = "30s"
+}
+
 # Create the bootstrap application that points to this repository
 resource "kubernetes_manifest" "bootstrap_app" {
   count = var.enable_bootstrap_app ? 1 : 0
@@ -118,5 +127,5 @@ resource "kubernetes_manifest" "bootstrap_app" {
     }
   }
 
-  depends_on = [helm_release.argocd]
+  depends_on = [time_sleep.wait_for_argocd_crds]
 }
