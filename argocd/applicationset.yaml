@@ -8,10 +8,9 @@ spec:
   - list:
       elements:
       # Org-level runner serves all repositories (project-beta, project-beta-api, project-beta-frontend)
-      # Deployed in arc-beta-runners-new namespace for backward compatibility
-      - name: arc-beta-runners-new
-        namespace: arc-beta-runners-new
-        valuesFile: examples/beta-runners-values.yaml
+      - name: arc-runners
+        namespace: arc-runners
+        valuesFile: examples/runners-values.yaml
         repo: Matchpoint-AI
   template:
     metadata:

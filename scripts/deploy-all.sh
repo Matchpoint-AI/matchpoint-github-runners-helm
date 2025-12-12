@@ -45,12 +45,12 @@ helm upgrade --install arc-api-runners . \
     --create-namespace \
     --wait
 
-# 4. Deploy beta runners
-echo "🧪 Installing Beta Runners..."
-helm upgrade --install arc-beta-runners . \
-    -f "$REPO_ROOT/examples/beta-runners-values.yaml" \
+# 4. Deploy org-level runners
+echo "🧪 Installing Organization Runners..."
+helm upgrade --install arc-runners . \
+    -f "$REPO_ROOT/examples/runners-values.yaml" \
     --set gha-runner-scale-set.githubConfigSecret.github_token="$GITHUB_TOKEN" \
-    -n arc-beta-runners \
+    -n arc-runners \
     --create-namespace \
     --wait
 
@@ -62,4 +62,4 @@ echo ""
 echo "🔍 To monitor runner pods:"
 echo "kubectl get pods -n arc-frontend-runners"
 echo "kubectl get pods -n arc-api-runners"
-echo "kubectl get pods -n arc-beta-runners"
+echo "kubectl get pods -n arc-runners"

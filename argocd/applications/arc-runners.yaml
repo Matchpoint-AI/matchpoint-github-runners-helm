@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: arc-beta-runners-new
+  name: arc-runners
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -12,14 +12,14 @@ spec:
     targetRevision: main
     path: charts/github-actions-runners
     helm:
-      releaseName: arc-beta-runners-new
+      releaseName: arc-runners
       valueFiles:
-        - ../../examples/beta-runners-values.yaml
-      # GitHub token should be configured as a secret in the cluster
-      # kubectl create secret generic github-runner-token -n arc-beta-runners-new --from-literal=github_token=YOUR_TOKEN
+        - ../../examples/runners-values.yaml
+  # Pre-defined secret arc-org-github-secret is not managed by ArgoCD
+  # It must be created manually in the cluster with the org-level PAT
   destination:
     server: https://kubernetes.default.svc
-    namespace: arc-beta-runners-new
+    namespace: arc-runners
   syncPolicy:
     automated:
       prune: true
@@ -28,16 +28,10 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 3m
-  ignoreDifferences:
-    - group: ""
-      kind: Secret
-      name: arc-beta-runners-new-gha-rs-github-secret
-      jsonPointers:
-        - /data/github_token
+  revisionHistoryLimit: 10

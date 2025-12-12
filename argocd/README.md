@@ -10,7 +10,7 @@ ArgoCD (GitOps Controller)
     └── github-runners (ApplicationSet)
         ├── arc-frontend-runners
         ├── arc-api-runners-v2
-        └── arc-beta-runners-new
+        └── arc-runners
 ```
 
 ## Setup
@@ -102,7 +102,7 @@ argocd app get arc-frontend-runners --health
 Edit the values files in the repository and commit:
 - `examples/frontend-runners-values.yaml`
 - `examples/api-runners-values.yaml`
-- `examples/beta-runners-values.yaml`
+- `examples/runners-values.yaml`
 
 ArgoCD will automatically detect changes and sync.
 
