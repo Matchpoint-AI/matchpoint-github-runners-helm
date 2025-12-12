@@ -7,7 +7,7 @@ repositories:
     org: Matchpoint-AI
     category: frontend
     scaling:
-      minRunners: 2      # Increased for pre-warming
+      minRunners: 0      # Scale to zero for cost savings (Issue #70)
       maxRunners: 15
     profile: large       # Upgraded from medium for better performance
     labels:
@@ -23,7 +23,7 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 2      # Keep warm to avoid cold-start queue delays (Issue #68)
+      minRunners: 0      # Scale to zero for cost savings (Issue #70)
       maxRunners: 20     # Increased from 15 for better parallelism
     profile: large       # Upgraded from medium for better performance
     labels:
