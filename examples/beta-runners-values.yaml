@@ -14,7 +14,7 @@ gha-runner-scale-set:
   # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-beta-runners-new --from-literal=github_token='ghp_...'
   githubConfigSecret: arc-org-github-secret
 
-  minRunners: 0      # Scale to zero when idle (cost optimization)
+  minRunners: 2      # Keep warm runners to avoid cold-start delays (Issue #68)
   maxRunners: 20
 
   # Security context for beta runners - removed to allow runner to work properly
@@ -70,13 +70,14 @@ gha-runner-scale-set:
         - name: DOCKER_TLS_CERTDIR
           value: ""
         resources:
-          # DinD sidecar for Docker builds - sized for typical CI docker operations
+          # DinD sidecar for Docker builds - increased for testcontainers workloads (Issue #68)
+          # pgvector/pgvector:pg16 + parallel pytest requires more resources
           requests:
-            cpu: "1"
-            memory: 2Gi
-          limits:
             cpu: "2"
             memory: 4Gi
+          limits:
+            cpu: "3"
+            memory: 8Gi
         securityContext:
           privileged: true
         volumeMounts:
