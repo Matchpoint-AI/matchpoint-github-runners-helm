@@ -22,7 +22,9 @@ gha-runner-scale-set:
     spec:
       containers:
       - name: runner
-        image: ghcr.io/actions/actions-runner:latest
+        # Use custom image with Node.js, Terraform, PostgreSQL/pgvector pre-installed
+        # To use default image: ghcr.io/actions/actions-runner:latest
+        image: ghcr.io/matchpoint-ai/arc-runner:latest
         command:
         - /home/runner/run.sh
         env:
@@ -62,7 +64,7 @@ presets:
       spec:
         containers:
         - name: runner
-          image: ghcr.io/actions/actions-runner:latest
+          image: ghcr.io/matchpoint-ai/arc-runner:latest
           command:
           - /home/runner/run.sh
           env:
@@ -141,7 +143,7 @@ presets:
       spec:
         containers:
         - name: runner
-          image: ghcr.io/actions/actions-runner:latest
+          image: ghcr.io/matchpoint-ai/arc-runner:latest
           command:
           - /home/runner/run.sh
           env:
