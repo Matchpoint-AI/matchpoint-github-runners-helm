@@ -1,8 +1,8 @@
-name: Pages
+name: Deploy GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["Release Charts"]
+    workflows: ["Release Helm Charts"]
     types:
       - completed
   workflow_dispatch:

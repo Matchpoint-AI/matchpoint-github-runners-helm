@@ -1,4 +1,4 @@
-name: Documentation
+name: Lint Documentation
 
 on:
   push:
