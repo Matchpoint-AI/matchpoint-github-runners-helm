@@ -21,6 +21,7 @@ This repository uses **automated CD for both Terraform infrastructure and Helm/A
 - ArgoCD installation
 
 **Key files:**
+
 | File | Purpose |
 |------|---------|
 | `terraform/prod.tfvars` | Production configuration (bid_price, min_nodes, max_nodes) |
@@ -46,6 +47,7 @@ PR merged to main → terraform apply (automatic)
 - Runner configurations per repository
 
 **Key files:**
+
 | File | Purpose |
 |------|---------|
 | `values/repositories.yaml` | Per-repo runner config (minRunners, maxRunners, labels) |

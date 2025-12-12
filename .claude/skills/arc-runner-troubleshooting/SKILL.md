@@ -516,6 +516,6 @@ jobs:
 
 - Helm Chart: `matchpoint-github-runners-helm/charts/github-actions-runners/`
 - Terraform: `matchpoint-github-runners-helm/terraform/`
-- ArgoCD: https://argocd.matchpointai.com (internal)
-- Rackspace Spot: https://spot.rackspace.com
-- ARC Documentation: https://github.com/actions/actions-runner-controller
+- ArgoCD: <https://argocd.matchpointai.com> (internal)
+- Rackspace Spot: <https://spot.rackspace.com>
+- ARC Documentation: <https://github.com/actions/actions-runner-controller>
