@@ -94,6 +94,28 @@ helm install my-runners matchpoint-runners/github-actions-runners \
   -n arc-runners --create-namespace
 ```
 
+## Documentation
+
+- [Deployment Guide](DEPLOYMENT.md) - Detailed deployment instructions
+- [Kubeconfig Workflow](docs/KUBECONFIG_WORKFLOW.md) - How to access and interact with the cluster
+- [Troubleshooting](docs/TROUBLESHOOTING_EMPTY_LABELS.md) - Common issues and solutions
+- [Scaling Guide](SCALING.md) - Runner scaling strategies
+
+## Cluster Access
+
+To interact with the deployed runners, you need cluster access. See the [Kubeconfig Workflow Guide](docs/KUBECONFIG_WORKFLOW.md) for detailed instructions on obtaining and using kubeconfig.
+
+**Quick start:**
+```bash
+# Get kubeconfig from terraform (recommended)
+export TF_HTTP_PASSWORD="<github-token>"
+cd terraform
+terraform init
+terraform output -raw kubeconfig_raw > /tmp/kubeconfig.yaml
+export KUBECONFIG=/tmp/kubeconfig.yaml
+kubectl get pods -A
+```
+
 ## Chart Development
 
 This repository follows Helm best practices:
