@@ -30,9 +30,9 @@ Rackspace Spot Kubernetes         ← Underlying infrastructure
 
 | Pool | Target | Namespace | Repository |
 |------|--------|-----------|------------|
-| `arc-beta-runners` | Org-level | `arc-beta-runners-new` | project-beta, project-beta-api |
-| `arc-frontend-runners` | Frontend | `arc-frontend-runners` | project-beta-frontend |
-| `arc-api-runners-v2` | API-specific | `arc-api-runners` | project-beta-api |
+| `arc-runners` | Org-level | `arc-runners` | All project-beta repos |
+
+**Note:** As of Dec 12, 2025, all workflows use `arc-runners` label. The `runnerScaleSetName` and ArgoCD `releaseName` must both be `arc-runners`.
 
 ### Key Configuration Files
 
@@ -152,7 +152,85 @@ gha-runner-scale-set:
 - [Troubleshooting Guide](https://github.com/Matchpoint-AI/matchpoint-github-runners-helm/blob/main/docs/TROUBLESHOOTING_EMPTY_LABELS.md)
 - Issue #89 in matchpoint-github-runners-helm
 
-### 2. Jobs Stuck in Queued State (2-5+ minutes)
+### 2. ArgoCD ApplicationSet Conflicting Parameters (CRITICAL - P0)
+
+**Root Cause:** ArgoCD ApplicationSet injects Helm `parameters` that conflict with values file.
+
+**CRITICAL: Dec 12, 2025 Discovery**
+
+The ApplicationSet (`argocd/applicationset.yaml`) was injecting:
+```yaml
+parameters:
+  - name: gha-runner-scale-set.githubConfigSecret.github_token
+    value: "$ARGOCD_ENV_GITHUB_TOKEN"
+```
+
+But the values file uses:
+```yaml
+githubConfigSecret: arc-org-github-secret  # String reference to pre-created secret
+```
+
+**The Conflict:**
+- Helm `--set gha-runner-scale-set.githubConfigSecret.github_token=` expects `githubConfigSecret` to be a map
+- Values file defines `githubConfigSecret` as a string (secret name reference)
+- Result: `interface conversion: interface {} is string, not map[string]interface {}`
+
+**Symptoms:**
+- ArgoCD Application shows `ComparisonError` in conditions
+- Manifest generation fails repeatedly
+- Runners may appear to work but sync is broken
+- Application status shows `Unknown` sync status
+
+**Diagnosis:**
+```bash
+# Check ArgoCD Application status
+kubectl get application arc-runners -n argocd -o jsonpath='{.status.conditions[*]}'
+
+# Look for error like:
+# "failed parsing --set data: unable to parse key: interface conversion: interface {} is string, not map[string]interface {}"
+
+# Check ApplicationSet for conflicting parameters
+kubectl get applicationset github-runners -n argocd -o jsonpath='{.spec.template.spec.source.helm}'
+```
+
+**Fix:**
+1. Remove `parameters` section from `argocd/applicationset.yaml`
+2. Use pre-created secrets referenced in values file
+
+```yaml
+# argocd/applicationset.yaml - DO NOT include parameters
+helm:
+  releaseName: '{{name}}'
+  valueFiles:
+    - '../../{{valuesFile}}'
+  # NO parameters section - values file handles secrets
+
+# examples/runners-values.yaml
+githubConfigSecret: arc-org-github-secret  # Pre-created in cluster
+```
+
+**Apply Fix to Cluster:**
+```bash
+# kubectl apply may not remove fields - use replace
+kubectl replace -f argocd/applicationset.yaml --force
+
+# Verify parameters removed
+kubectl get applicationset github-runners -n argocd -o jsonpath='{.spec.template.spec.source.helm}'
+```
+
+**Secret Setup:**
+```bash
+# Create the secret manually in the cluster
+kubectl create secret generic arc-org-github-secret \
+  --namespace=arc-runners \
+  --from-literal=github_token='ghp_...'
+```
+
+**References:**
+- PR #94 in matchpoint-github-runners-helm (the fix)
+- Issue #89 in matchpoint-github-runners-helm
+
+### 3. Jobs Stuck in Queued State (2-5+ minutes)
 
 **Root Cause:** `minRunners: 0` causes cold-start delays
 
@@ -189,7 +267,7 @@ Job Queued → Assign to pre-warmed runner → Job starts
 Total: 5-10 seconds
 ```
 
-### 2. Cluster Access Issues
+### 4. Cluster Access Issues
 
 **Problem:** Cannot connect to Rackspace Spot cluster
 
@@ -264,7 +342,7 @@ ngpc login
 ngpc kubeconfig get <cloudspace-name>
 ```
 
-### 3. DNS Resolution Failures
+### 5. DNS Resolution Failures
 
 **Problem:** Cluster hostname not resolving
 
@@ -303,7 +381,7 @@ terraform state list | grep cloudspace
 terraform state show module.cloudspace.spot_cloudspace.main
 ```
 
-### 4. Configuration Mismatch
+### 6. Configuration Mismatch
 
 **Problem:** Documentation says one thing, deployed config is different
 
@@ -389,8 +467,13 @@ gh api /orgs/Matchpoint-AI/actions/runner-groups --jq '.runner_groups[].name'
 
 ## Related Issues
 
-| Issue | Repository | Description |
-|-------|------------|-------------|
+| Issue/PR | Repository | Description |
+|----------|------------|-------------|
+| #89 | matchpoint-github-runners-helm | Empty runner labels investigation |
+| #91 | matchpoint-github-runners-helm | PR: Change release name (superseded) |
+| #93 | matchpoint-github-runners-helm | PR: Revert to arc-runners naming - MERGED |
+| #94 | matchpoint-github-runners-helm | PR: Remove ApplicationSet parameters - MERGED (THE FIX) |
+| #798 | project-beta-api | PR: Update workflow labels to arc-runners |
 | #72 | matchpoint-github-runners-helm | Root cause analysis for queuing |
 | #77 | matchpoint-github-runners-helm | Fix PR (minRunners: 0 → 2) - MERGED |
 | #76 | matchpoint-github-runners-helm | Investigation state file |
