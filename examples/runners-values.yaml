@@ -8,10 +8,10 @@ gha-runner-scale-set:
     name: arc-gha-rs-controller
   # Organization-level runner to serve all repos (project-beta, project-beta-api, project-beta-frontend)
   githubConfigUrl: "https://github.com/Matchpoint-AI"
-  runnerScaleSetName: "arc-beta-runners-new"
+  runnerScaleSetName: "arc-runners"
 
   # Reference pre-defined secret with org-level PAT (created manually in cluster)
-  # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-beta-runners-new --from-literal=github_token='ghp_...'
+  # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-runners --from-literal=github_token='ghp_...'
   githubConfigSecret: arc-org-github-secret
 
   minRunners: 2      # Keep 2 runners pre-warmed to eliminate cold-start delays (Issue #72, #76)
