@@ -27,17 +27,18 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && npm install -g yarn \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python 3.12
+# Install Python 3.12 (using ensurepip to avoid distutils dependency removed in 3.12)
 RUN add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get update \
     && apt-get install -y \
         python3.12 \
         python3.12-dev \
         python3.12-venv \
-        python3-pip \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 \
-    && python3 -m pip install --upgrade pip setuptools wheel \
-    && python3 -m pip install poetry \
+    && python3.12 -m ensurepip --upgrade \
+    && python3.12 -m pip install --upgrade pip setuptools wheel \
+    && python3.12 -m pip install poetry \
+    && ln -sf /usr/bin/python3.12 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PostgreSQL 16 client and pgvector
