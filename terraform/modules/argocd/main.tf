@@ -36,7 +36,7 @@ resource "helm_release" "argocd" {
   ]
 }
 
-# Create namespace for runner applications
+# Create namespace for runner applications (ARC controller)
 resource "kubernetes_namespace" "arc_systems" {
   metadata {
     name = "arc-systems"
@@ -48,6 +48,36 @@ resource "kubernetes_namespace" "arc_systems" {
   }
 
   depends_on = [helm_release.argocd]
+}
+
+# Create namespace for ARC runner pods
+resource "kubernetes_namespace" "arc_runners" {
+  metadata {
+    name = "arc-runners"
+
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+      "matchpoint.ai/component"      = "arc-runners"
+    }
+  }
+
+  depends_on = [helm_release.argocd]
+}
+
+# Create GitHub token secret for ARC runner registration
+# This secret is required by the AutoScalingRunnerSet to authenticate with GitHub
+# The token needs admin:org and manage_runners:org scopes for org-level runners
+resource "kubernetes_secret" "arc_github_token" {
+  metadata {
+    name      = "arc-org-github-secret"
+    namespace = "arc-runners"
+  }
+
+  data = {
+    github_token = var.github_token
+  }
+
+  depends_on = [kubernetes_namespace.arc_runners]
 }
 
 # Create GitHub token secret for ArgoCD repo access
