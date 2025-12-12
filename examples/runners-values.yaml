@@ -31,7 +31,7 @@ gha-runner-scale-set:
         - /home/runner/run.sh
         env:
         - name: ACTIONS_RUNNER_LABELS
-          value: "arc-beta-runners,self-hosted,linux,x64"
+          value: "arc-runners,arc-beta-runners,self-hosted,linux,x64"
         - name: RUNNER_NAME_PREFIX
           value: "arc-beta"
         - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
