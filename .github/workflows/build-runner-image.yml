@@ -78,6 +78,7 @@ jobs:
             npm --version && \
             python3 --version && \
             terraform --version && \
+            tofu --version && \
             psql --version && \
             docker --version && \
             echo 'All tools verified successfully!'
@@ -97,7 +98,7 @@ jobs:
           echo "**Included Tools:**" >> $GITHUB_STEP_SUMMARY
           echo "- Node.js 20 LTS" >> $GITHUB_STEP_SUMMARY
           echo "- Python 3.12 with pip and poetry" >> $GITHUB_STEP_SUMMARY
-          echo "- Terraform 1.9.x with terraform-docs" >> $GITHUB_STEP_SUMMARY
+          echo "- Terraform 1.9.x and OpenTofu 1.8.x with terraform-docs" >> $GITHUB_STEP_SUMMARY
           echo "- PostgreSQL 16 client with pgvector" >> $GITHUB_STEP_SUMMARY
           echo "- Docker CLI" >> $GITHUB_STEP_SUMMARY
           echo "- shellcheck and other linting tools" >> $GITHUB_STEP_SUMMARY
