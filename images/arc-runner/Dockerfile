@@ -58,6 +58,14 @@ RUN wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraf
     && rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
     && terraform --version
 
+# Install OpenTofu (open-source Terraform fork)
+ARG OPENTOFU_VERSION=1.8.8
+RUN wget -q https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_linux_amd64.zip \
+    && unzip tofu_${OPENTOFU_VERSION}_linux_amd64.zip \
+    && mv tofu /usr/local/bin/ \
+    && rm tofu_${OPENTOFU_VERSION}_linux_amd64.zip \
+    && tofu --version
+
 # Install terraform-docs
 ARG TERRAFORM_DOCS_VERSION=0.19.0
 RUN wget -q https://github.com/terraform-docs/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/terraform-docs-v${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz \
@@ -94,6 +102,7 @@ RUN node --version && \
     pip --version && \
     poetry --version && \
     terraform --version && \
+    tofu --version && \
     terraform-docs --version && \
     psql --version && \
     docker --version && \
@@ -110,6 +119,6 @@ RUN mkdir -p /home/runner/.terraform.d/plugin-cache
 
 # Labels
 LABEL org.opencontainers.image.source="https://github.com/Matchpoint-AI/matchpoint-github-runners-helm"
-LABEL org.opencontainers.image.description="Custom GitHub Actions Runner with Node.js, Terraform, PostgreSQL, and pgvector"
+LABEL org.opencontainers.image.description="Custom GitHub Actions Runner with Node.js, Terraform, OpenTofu, PostgreSQL, and pgvector"
 LABEL org.opencontainers.image.vendor="Matchpoint AI"
 LABEL maintainer="Matchpoint AI <engineering@matchpoint.ai>"
