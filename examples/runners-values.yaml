@@ -50,14 +50,15 @@ gha-runner-scale-set:
         - name: PIP_CACHE_DIR
           value: "/home/runner/_work/_pip-cache"
         resources:
-          # Increased for ARC performance optimization (Issue #1522)
-          # Node capacity: 8 CPU, ~30Gi per node - leaving room for DinD sidecar
+          # Reduced to allow 2 pods per node (Issue #141)
+          # Node capacity: 7.5 CPU allocatable - 2 pods × 3 CPU = 6 CPU, leaving 1.5 CPU for system
+          # Trade-off: Slightly slower CI but better scheduling and concurrency
           requests:
-            cpu: "4"        # Doubled from Cloud Run for faster CI
-            memory: 12Gi    # Increased for parallel test execution
+            cpu: "2"        # Reduced from 4 for better pod density
+            memory: 8Gi     # Reduced from 12Gi for better scheduling
           limits:
-            cpu: "4"
-            memory: 12Gi
+            cpu: "3"        # Allow burst to 3 CPU
+            memory: 10Gi
         volumeMounts:
         - name: work
           mountPath: /home/runner/_work
@@ -75,14 +76,14 @@ gha-runner-scale-set:
         - name: DOCKER_TLS_CERTDIR
           value: ""
         resources:
-          # DinD sidecar for Docker builds - increased for testcontainers workloads (Issue #68)
-          # pgvector/pgvector:pg16 + parallel pytest requires more resources
+          # DinD sidecar - reduced for better pod density (Issue #141)
+          # Still sufficient for Docker builds and testcontainers
           requests:
-            cpu: "2"
-            memory: 4Gi
+            cpu: "1"        # Reduced from 2 for better scheduling
+            memory: 3Gi     # Reduced from 4Gi
           limits:
-            cpu: "3"
-            memory: 8Gi
+            cpu: "2"        # Allow burst for heavy builds
+            memory: 6Gi
         securityContext:
           privileged: true
         volumeMounts:
