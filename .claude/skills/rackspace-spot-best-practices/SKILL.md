@@ -808,12 +808,87 @@ kubeseal --format=yaml < secret.yaml > sealed-secret.yaml
 - [AWS Best Practices for Self-Hosted Runners](https://aws.amazon.com/blogs/devops/best-practices-working-with-self-hosted-github-action-runners-at-scale-on-aws/)
 - [Chargebee: Save Cost with Spot Instances](https://medium.com/chargebee-engineering/save-cost-by-running-github-actions-on-spot-instances-inside-an-eks-cluster-342f02ee2320)
 
+## Kubeconfig Token Expiration (CRITICAL - Dec 13, 2025 Discovery)
+
+### The Problem
+
+Rackspace Spot kubeconfig JWT tokens expire after **3 days**. This causes:
+- kubectl commands to fail with auth errors
+- Misleading "no such host" DNS errors (actually token expiration)
+- Agents unable to access cluster for diagnostics
+
+### Verify Token Expiration
+
+```bash
+# Decode JWT to check when token expires
+TOKEN=$(grep "token:" kubeconfig.yaml | head -1 | awk '{print $2}')
+echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null | python3 -c "
+import json, sys
+from datetime import datetime
+payload = json.load(sys.stdin)
+exp = datetime.fromtimestamp(payload['exp'])
+print(f'Token expires: {exp}')
+print(f'Expired: {datetime.now() > exp}')
+"
+```
+
+### Solution: Scheduled Terraform Refresh
+
+A GitHub Actions workflow (`refresh-kubeconfig.yml`) runs every 2 days to refresh the terraform state before the 3-day token expiration.
+
+**How it works:**
+1. Workflow runs `terraform refresh` with RACKSPACE_SPOT_API_TOKEN
+2. Terraform's `data.spot_kubeconfig` fetches fresh token from Rackspace API
+3. Fresh token stored in terraform state (tfstate.dev)
+4. Users can get fresh kubeconfig via `terraform output`
+
+**Reference:** Issue #135, PR #137
+
+### Getting Fresh Kubeconfig
+
+**Option A: From Terraform State (RECOMMENDED)**
+
+The state is auto-refreshed every 2 days:
+
+```bash
+# Get GitHub token from gh CLI config
+export TF_HTTP_PASSWORD=$(cat ~/.config/gh/hosts.yml | grep oauth_token | awk '{print $2}')
+
+cd matchpoint-github-runners-helm/terraform
+terraform init -input=false
+terraform output -raw kubeconfig_raw > /tmp/kubeconfig.yaml
+export KUBECONFIG=/tmp/kubeconfig.yaml
+kubectl get nodes
+```
+
+**Option B: Manual Refresh (if token expired)**
+
+If the scheduled workflow hasn't run recently:
+
+```bash
+# Requires RACKSPACE_SPOT_API_TOKEN
+cd matchpoint-github-runners-helm/terraform
+terraform refresh -var="rackspace_spot_token=$RACKSPACE_SPOT_API_TOKEN"
+terraform output -raw kubeconfig_raw > /tmp/kubeconfig.yaml
+```
+
+**Option C: OIDC Context (interactive)**
+
+The kubeconfig includes an OIDC context that auto-refreshes via browser login:
+
+```bash
+kubectl --kubeconfig=kubeconfig.yaml --context=matchpoint-ai-matchpoint-runners-oidc get pods
+```
+
+Requires: `kubectl oidc-login` plugin (`kubectl krew install oidc-login`)
+
 ## Quick Reference Commands
 
 ```bash
-# Get fresh kubeconfig
-export TF_HTTP_PASSWORD="<github-token>"
+# Get fresh kubeconfig (using gh CLI token)
+export TF_HTTP_PASSWORD=$(cat ~/.config/gh/hosts.yml | grep oauth_token | awk '{print $2}')
 cd matchpoint-github-runners-helm/terraform
+terraform init -input=false
 terraform output -raw kubeconfig_raw > /tmp/rs-kubeconfig.yaml
 export KUBECONFIG=/tmp/rs-kubeconfig.yaml
 

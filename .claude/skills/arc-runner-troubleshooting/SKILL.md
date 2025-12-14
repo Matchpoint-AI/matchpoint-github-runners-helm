@@ -289,22 +289,42 @@ error: unknown command "oidc-login" for "kubectl"
 dial tcp: lookup hcp-xxx.spot.rackspace.com: no such host
 ```
 
+**CRITICAL: Kubeconfig Token Expiration (Dec 13, 2025 Discovery)**
+
+Rackspace Spot kubeconfig JWT tokens expire after **3 days**. This is why:
+- Downloaded kubeconfig "goes stale after a day or two"
+- Manual downloads from Rackspace console have the same problem
+- The DNS lookup failure is often a red herring - the token is expired, not the cluster
+
+**Verify token expiration:**
+```bash
+# Decode JWT to check expiration
+TOKEN=$(grep "token:" kubeconfig.yaml | head -1 | awk '{print $2}')
+echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null | python3 -c "
+import json, sys
+from datetime import datetime
+payload = json.load(sys.stdin)
+exp = datetime.fromtimestamp(payload['exp'])
+print(f'Token expires: {exp}')
+print(f'Expired: {datetime.now() > exp}')
+"
+```
+
 **Solutions:**
 
-**Option A: Get kubeconfig from Terraform (RECOMMENDED)**
+**Option A: Get kubeconfig from Terraform State (RECOMMENDED)**
 
-This is the preferred method - it gets a fresh kubeconfig from the active cloudspace without modifying infrastructure.
+This is the preferred method - it gets a fresh kubeconfig from the terraform state.
 
 ```bash
-# 1. Set up terraform backend authentication
-# Requires GitHub token with repo scope for TFstate.dev backend
-export TF_HTTP_PASSWORD="<github-token-with-repo-scope>"
+# 1. Get GitHub token from gh CLI config
+export TF_HTTP_PASSWORD=$(cat ~/.config/gh/hosts.yml | grep oauth_token | awk '{print $2}')
 
 # 2. Navigate to terraform directory
 cd /home/pselamy/repositories/matchpoint-github-runners-helm/terraform
 
 # 3. Initialize terraform (reads state only, no changes)
-terraform init
+terraform init -input=false
 
 # 4. Get kubeconfig from terraform output (read-only operation)
 terraform output -raw kubeconfig_raw > /tmp/runners-kubeconfig.yaml
@@ -315,9 +335,11 @@ kubectl get pods -A
 ```
 
 **Why this works:**
-- `terraform output` only reads from state, doesn't plan or apply
-- Uses `data.spot_kubeconfig` which fetches fresh credentials from Rackspace Spot API
-- The cloudspace module automatically retrieves kubeconfig via the `spot` provider
+- `terraform output` reads from cached state in tfstate.dev
+- State is refreshed every 2 days by scheduled workflow (PR #137)
+- No Rackspace Spot API token needed to read outputs
+
+**Note:** A scheduled workflow (`refresh-kubeconfig.yml`) runs every 2 days to refresh the token in terraform state before the 3-day expiration.
 
 **Option B: Use token-based auth (ngpc-user)**
 ```bash
@@ -392,7 +414,92 @@ terraform state list | grep cloudspace
 terraform state show module.cloudspace.spot_cloudspace.main
 ```
 
-### 6. Configuration Mismatch
+### 6. Missing Tools (wget, curl, Docker CLI)
+
+**Problem:** CI workflows fail with "command not found" for common tools
+
+**CRITICAL: Custom Runner Image (Dec 13, 2025 Discovery)**
+
+Two runner images exist:
+1. `ghcr.io/actions/actions-runner:latest` - **Generic** (missing many tools)
+2. `ghcr.io/matchpoint-ai/arc-runner:latest` - **Custom** (has all tools)
+
+**Symptoms:**
+```
+/bin/bash: wget: command not found
+/bin/bash: docker: command not found
+```
+
+**Root Cause:** Configuration may be using the generic image instead of custom.
+
+**Diagnosis:**
+```bash
+# Check which image is configured
+grep -r "ghcr.io" examples/*.yaml values/*.yaml | grep -v "#"
+
+# Check which image is actually running
+kubectl get pods -n arc-runners -o jsonpath='{.items[0].spec.containers[0].image}'
+```
+
+**Custom Image Includes:**
+| Tool | Version |
+|------|---------|
+| wget, curl, jq | latest |
+| Node.js | 20 LTS |
+| Python | 3.12 + pip + poetry |
+| Docker CLI | 24.x |
+| Terraform | 1.9.x |
+| PostgreSQL client | 16 |
+| Build tools | make, gcc, etc. |
+
+**Fix:**
+```yaml
+# examples/runners-values.yaml
+containers:
+- name: runner
+  image: ghcr.io/matchpoint-ai/arc-runner:latest  # NOT actions-runner!
+```
+
+**Note:** The custom image is built from `images/arc-runner/Dockerfile` in this repo. The build workflow runs on pushes to `images/arc-runner/**`.
+
+**Reference:** Issue #135, PR #138
+
+### 7. Docker-in-Docker (DinD) Issues
+
+**Problem:** Docker commands fail even though DinD sidecar is configured
+
+**Symptoms:**
+```
+Cannot connect to the Docker daemon at tcp://localhost:2375
+```
+
+**Diagnosis:**
+```bash
+# Check pod has 2 containers (runner + dind)
+kubectl get pods -n arc-runners -o jsonpath='{.items[*].spec.containers[*].name}'
+# Should show: runner dind
+
+# Check DinD logs
+kubectl logs -n arc-runners <pod-name> -c dind --tail=50
+# Should show: "API listen on [::]:2375"
+
+# Verify DOCKER_HOST env var
+kubectl get pods -n arc-runners -o jsonpath='{.items[0].spec.containers[0].env}' | jq '.[] | select(.name=="DOCKER_HOST")'
+# Should show: tcp://localhost:2375
+```
+
+**Common Issues:**
+1. **DinD not running:** Check if privileged mode is allowed in cluster
+2. **Wrong DOCKER_HOST:** Should be `tcp://localhost:2375`
+3. **Missing sidecar:** Check pod template in values file
+
+**Verify DinD is healthy:**
+```bash
+kubectl exec -n arc-runners <pod-name> -c runner -- docker version
+kubectl exec -n arc-runners <pod-name> -c runner -- docker info
+```
+
+### 8. Configuration Mismatch
 
 **Problem:** Documentation says one thing, deployed config is different
 
@@ -480,6 +587,10 @@ gh api /orgs/Matchpoint-AI/actions/runner-groups --jq '.runner_groups[].name'
 
 | Issue/PR | Repository | Description |
 |----------|------------|-------------|
+| #135 | matchpoint-github-runners-helm | Epic: ARC runner environment limitations (Dec 2025) |
+| #136 | matchpoint-github-runners-helm | Document troubleshooting learnings in skills |
+| #137 | matchpoint-github-runners-helm | PR: Auto-refresh kubeconfig token workflow |
+| #138 | matchpoint-github-runners-helm | PR: Use custom runner image with pre-installed tools |
 | #112 | matchpoint-github-runners-helm | CI jobs stuck - PR #98 broke alignment |
 | #113 | matchpoint-github-runners-helm | CI validation feature request |
 | #114 | matchpoint-github-runners-helm | PR: Fix releaseName alignment + CI validation |
