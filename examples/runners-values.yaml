@@ -39,6 +39,8 @@ gha-runner-scale-set:
           value: "false"
         - name: DOCKER_HOST
           value: "tcp://localhost:2375"
+        - name: DOCKER_API_VERSION
+          value: "1.43"  # Required: DinD v24 max API is 1.43, runner Docker client v29 uses 1.52
         - name: ACTIONS_RUNNER_POD_NAME
           valueFrom:
             fieldRef:
