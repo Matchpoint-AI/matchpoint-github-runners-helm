@@ -84,8 +84,8 @@ repositories:
 
 # Global overrides (applied to all repositories)
 globalOverrides:
-  # Force specific runner image
-  runnerImage: "ghcr.io/actions/actions-runner:latest"
+  # Force specific runner image (custom image with wget, curl, docker CLI, etc.)
+  runnerImage: "ghcr.io/matchpoint-ai/arc-runner:latest"
 
   # Add global labels to all runners
   additionalLabels:
