@@ -83,6 +83,13 @@ RUN install -m 0755 -d /etc/apt/keyrings \
     && apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Google Cloud SDK
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
+    && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
+    && apt-get update \
+    && apt-get install -y google-cloud-cli \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install additional tools commonly used in CI
 RUN apt-get update && apt-get install -y \
     make \
@@ -106,7 +113,8 @@ RUN node --version && \
     terraform-docs --version && \
     psql --version && \
     docker --version && \
-    shellcheck --version
+    shellcheck --version && \
+    gcloud --version
 
 # Set environment variables for optimal CI performance
 ENV NODE_OPTIONS="--max-old-space-size=4096"
@@ -119,6 +127,6 @@ RUN mkdir -p /home/runner/.terraform.d/plugin-cache
 
 # Labels
 LABEL org.opencontainers.image.source="https://github.com/Matchpoint-AI/matchpoint-github-runners-helm"
-LABEL org.opencontainers.image.description="Custom GitHub Actions Runner with Node.js, Terraform, OpenTofu, PostgreSQL, and pgvector"
+LABEL org.opencontainers.image.description="Custom GitHub Actions Runner with Node.js, Terraform, OpenTofu, PostgreSQL, pgvector, and Google Cloud SDK"
 LABEL org.opencontainers.image.vendor="Matchpoint AI"
 LABEL maintainer="Matchpoint AI <engineering@matchpoint.ai>"
