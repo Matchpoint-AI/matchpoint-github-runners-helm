@@ -7,7 +7,7 @@ repositories:
     org: Matchpoint-AI
     category: frontend
     scaling:
-      minRunners: 2      # Keep 2 runners warm for faster response
+      minRunners: 3      # Keep 3 runners warm for faster response (Issue #152)
       maxRunners: 25     # Increased from 15 for higher throughput
     profile: large       # Upgraded from medium for better performance
     labels:
@@ -23,7 +23,7 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 2      # Keep 2 runners warm for faster response
+      minRunners: 3      # Keep 3 runners warm for faster response (Issue #152)
       maxRunners: 30     # Increased from 20 for higher throughput
     profile: large       # Upgraded from medium for better performance
     labels:
@@ -37,7 +37,7 @@ repositories:
     org: Matchpoint-AI
     category: backend
     scaling:
-      minRunners: 2      # Keep 2 runners warm for faster response
+      minRunners: 3      # Keep 3 runners warm for faster response (Issue #152)
       maxRunners: 30     # Increased from 20 for higher throughput
     profile: xlarge      # Upgraded from large for maximum performance
     labels:
