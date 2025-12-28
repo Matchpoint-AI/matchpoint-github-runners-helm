@@ -93,9 +93,9 @@ variable "min_nodes" {
 }
 
 variable "max_nodes" {
-  description = "Maximum nodes"
+  description = "Maximum nodes - autoscales up to this limit during CI peak (Issue #154)"
   type        = number
-  default     = 10
+  default     = 15  # Increased from 10 to support 25+ concurrent runners
 }
 
 #------------------------------------------------------------------------------
