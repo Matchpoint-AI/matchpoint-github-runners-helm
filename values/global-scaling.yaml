@@ -9,11 +9,11 @@ scaling:
   #   1.0 = Normal capacity
   #   2.0 = Double capacity (high demand)
   #   3.0 = Triple capacity (peak load)
-  globalMultiplier: 1.0
+  globalMultiplier: 1.5          # Increased from 1.0 for higher throughput
 
   # Absolute limits (safety boundaries)
   absolute:
-    maxTotalRunners: 200        # Total runners across all repos
+    maxTotalRunners: 300         # Increased from 200 for higher throughput
     maxRunnersPerRepo: 50        # Maximum for any single repo
     minRunnersPerRepo: 0         # Minimum for any single repo
 
@@ -21,8 +21,8 @@ scaling:
   presets:
     # Normal operations
     normal:
-      globalMultiplier: 1.0
-      maxTotalRunners: 200
+      globalMultiplier: 1.5
+      maxTotalRunners: 300
 
     # Cost saving mode (nights/weekends)
     economy:
@@ -129,15 +129,15 @@ clusterCapacity:
   # Node pool configurations
   nodePools:
     general:
-      maxNodes: 20
+      maxNodes: 30               # Increased from 20 for higher throughput
       instanceType: "n2-standard-4"
 
     compute:
-      maxNodes: 10
+      maxNodes: 15               # Increased from 10 for higher throughput
       instanceType: "c2-standard-8"
 
     memory:
-      maxNodes: 5
+      maxNodes: 8                # Increased from 5 for higher throughput
       instanceType: "m2-highmem-4"
 
 # Cost optimization
