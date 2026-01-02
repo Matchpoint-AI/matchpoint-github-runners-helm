@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script to create GitHub token secret for runners
+# Script to create GitHub token secrets for ArgoCD and org-level ARC runners
 # This keeps the actual token out of Git while maintaining GitOps
 
 set -e
@@ -12,25 +12,15 @@ fi
 
 GITHUB_TOKEN="$1"
 
-echo "Creating GitHub token secrets for runners..."
+echo "Creating GitHub token secrets for ArgoCD and org-level runners..."
 
-# Create secrets in each namespace
-kubectl create secret generic github-runner-token \
+# Create secrets in required namespaces
+kubectl create secret generic github-token \
     -n argocd \
     --from-literal=token="$GITHUB_TOKEN" \
     --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl create secret generic arc-frontend-runners-gha-rs-github-secret \
-    -n arc-frontend-runners \
-    --from-literal=github_token="$GITHUB_TOKEN" \
-    --dry-run=client -o yaml | kubectl apply -f -
-
-kubectl create secret generic arc-api-runners-v2-gha-rs-github-secret \
-    -n arc-api-runners-v2 \
-    --from-literal=github_token="$GITHUB_TOKEN" \
-    --dry-run=client -o yaml | kubectl apply -f -
-
-kubectl create secret generic arc-runners-gha-rs-github-secret \
+kubectl create secret generic arc-org-github-secret \
     -n arc-runners \
     --from-literal=github_token="$GITHUB_TOKEN" \
     --dry-run=client -o yaml | kubectl apply -f -

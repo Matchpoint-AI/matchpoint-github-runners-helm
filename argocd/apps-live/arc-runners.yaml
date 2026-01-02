@@ -20,7 +20,7 @@ spec:
       valueFiles:
         - ../../examples/runners-values.yaml
       # GitHub token should be configured as a secret in the cluster
-      # kubectl create secret generic github-runner-token -n arc-runners --from-literal=github_token=YOUR_TOKEN
+      # kubectl create secret generic arc-org-github-secret -n arc-runners --from-literal=github_token=YOUR_TOKEN
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-runners
