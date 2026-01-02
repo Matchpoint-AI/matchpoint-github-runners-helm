@@ -14,8 +14,12 @@ gha-runner-scale-set:
   # Secret must be created with: kubectl create secret generic arc-org-github-secret --namespace=arc-runners --from-literal=github_token='ghp_...'
   githubConfigSecret: arc-org-github-secret
 
-  minRunners: 3      # Baseline capacity to reduce cold start delays (Issue #101)
-  maxRunners: 20
+  # Scaling configuration - tuned for capacity (Issues #152, #154)
+  # Resource math: Each pod needs 3 CPU (runner: 2, dind: 1)
+  # With 15 max nodes × 7.5 CPU = 112 CPU → ~30 max concurrent runners
+  # Keep minRunners warm to eliminate cold start delays (2-5 min → <10 sec)
+  minRunners: 5      # 5 warm runners for instant job pickup (Issue #152)
+  maxRunners: 25     # Allow scaling to 25 for peak demand (Issue #154)
 
   # Security context for beta runners - removed to allow runner to work properly
   # securityContext:
