@@ -24,11 +24,12 @@ resource "spot_cloudspace" "main" {
 }
 
 # Wait for control plane to become ready before fetching kubeconfig
-# Issue #159: Control plane takes 5-10 minutes to provision after cloudspace creation
+# Issue #159: Control plane takes 15-20+ minutes to provision after cloudspace creation
+# Attempt 14 showed 10m wasn't enough - cloudspace was still in "Provisioning" phase
 resource "time_sleep" "wait_for_control_plane" {
   depends_on = [spot_cloudspace.main]
 
-  create_duration = "10m"  # Wait 10 minutes for control plane to provision
+  create_duration = "20m"  # Wait 20 minutes for control plane to provision
 }
 
 # Retrieve kubeconfig for the created cloudspace
