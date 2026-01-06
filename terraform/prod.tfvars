@@ -2,20 +2,19 @@
 # Usage: terraform apply -var-file=prod.tfvars
 
 # Cloudspace configuration
-# ATTEMPT 8: Try IAD (US East / Northern Virginia) - DFW and ORD both failed (Issue #159)
-cloudspace_name    = "mp-runners-iad"  # New cloudspace in IAD region
-region             = "us-east-iad-1"  # Switching to US East (Northern Virginia)
+# ATTEMPT 10: Retry IAD with pinned provider v0.1.4 and non-HA (simpler config)
+cloudspace_name    = "mp-runners-v3"  # Fresh cloudspace name
+region             = "us-east-iad-1"  # Back to IAD with new provider
 kubernetes_version = "1.30.10"  # Stable K8s version
-ha_control_plane   = true  # HA for control plane stability
+ha_control_plane   = false  # Try without HA (simpler control plane)
 
 # Environment
 environment = "prod"
 
 # Node pool configuration
-# gp.vs1.large-iad: 4 vCPU, 15GB RAM (IAD region equivalent)
-# Server classes are region-specific
+# gp.vs1.large-iad: 4 vCPU, 15GB RAM
 server_class = "gp.vs1.large-iad"
-bid_price    = 0.25  # Bid for region availability
+bid_price    = 0.30  # Higher bid
 
 # Autoscaling - increase min_nodes to compensate for smaller instances
 min_nodes = 2
