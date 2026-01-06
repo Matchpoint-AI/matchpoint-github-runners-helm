@@ -98,6 +98,16 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
+      - name: Setup Go (for spotctl)
+        if: github.event.inputs.action == 'destroy'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install spotctl
+        if: github.event.inputs.action == 'destroy'
+        run: go install github.com/rackspace-spot/spotctl@latest
+
       - name: Terraform Format Check
         id: fmt
         run: terraform fmt -check -recursive
@@ -243,8 +253,10 @@ jobs:
             -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}"
 
-      - name: Clean State and Delete Cloudspace via API
+      - name: Clean State and Delete Cloudspace via spotctl
         if: github.event.inputs.action == 'destroy'
+        env:
+          RACKSPACE_SPOT_API_TOKEN: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
         run: |
           # Step 1: Remove ALL terraform state entries
           # This handles stuck cloudspaces that can't be destroyed normally
@@ -254,43 +266,38 @@ jobs:
             terraform state rm "$resource" || true
           done
 
-          # Step 2: Delete cloudspace directly via Rackspace Spot API
-          # This bypasses Terraform's data source dependency that fails on stuck cloudspaces
+          # Step 2: Delete cloudspace using spotctl CLI
+          # spotctl handles the API correctly and supports stuck cloudspaces
           CLOUDSPACE_NAME=$(grep 'cloudspace_name' "${{ steps.workspace.outputs.workspace }}.tfvars" | cut -d'"' -f2)
-          echo "Deleting cloudspace '$CLOUDSPACE_NAME' via Rackspace Spot API..."
+          echo "Deleting cloudspace '$CLOUDSPACE_NAME' via spotctl..."
 
-          # Get org ID first
-          ORG_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
-            "https://spot.rackspace.com/api/v1/organizations" | jq -r '.[0].id')
+          # Configure spotctl
+          mkdir -p ~/.spot
+          cat > ~/.spot_config << EOF
+          org: "matchpoint-ai"
+          refreshToken: "${RACKSPACE_SPOT_API_TOKEN}"
+          accessToken: "${RACKSPACE_SPOT_API_TOKEN}"
+          EOF
 
-          if [ -n "$ORG_ID" ] && [ "$ORG_ID" != "null" ]; then
-            echo "Found org ID: $ORG_ID"
+          # List existing cloudspaces first
+          echo "Current cloudspaces:"
+          ~/go/bin/spotctl cloudspaces list --org matchpoint-ai -o table || echo "Failed to list cloudspaces"
 
-            # Delete cloudspace
-            DELETE_RESPONSE=$(curl -s -w "%{http_code}" -X DELETE \
-              -H "Authorization: Bearer ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
-              "https://spot.rackspace.com/api/v1/organizations/$ORG_ID/cloudspaces/$CLOUDSPACE_NAME")
+          # Delete the cloudspace
+          echo "Deleting cloudspace $CLOUDSPACE_NAME..."
+          ~/go/bin/spotctl cloudspaces delete --name "$CLOUDSPACE_NAME" --org matchpoint-ai || echo "Cloudspace may already be deleted or not exist"
 
-            HTTP_CODE="${DELETE_RESPONSE: -3}"
-            BODY="${DELETE_RESPONSE:0:${#DELETE_RESPONSE}-3}"
+          # Verify deletion
+          echo "Verifying deletion..."
+          sleep 5
+          ~/go/bin/spotctl cloudspaces list --org matchpoint-ai -o table || true
 
-            echo "Delete response code: $HTTP_CODE"
-            echo "Delete response body: $BODY"
-
-            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "404" ]; then
-              echo "Cloudspace deleted or already gone"
-            else
-              echo "Warning: Unexpected response, continuing anyway"
-            fi
-          else
-            echo "Warning: Could not get org ID, cloudspace may need manual deletion"
-          fi
-        continue-on-error: true
+          echo "Cloudspace cleanup complete."
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         run: |
-          # After state cleanup and API deletion, this will show "no resources to destroy"
+          # After state cleanup and spotctl deletion, this will show "no resources to destroy"
           terraform destroy -auto-approve \
             -var-file="${{ steps.workspace.outputs.workspace }}.tfvars" \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
