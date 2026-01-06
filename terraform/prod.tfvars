@@ -2,22 +2,20 @@
 # Usage: terraform apply -var-file=prod.tfvars
 
 # Cloudspace configuration
-cloudspace_name    = "mp-runners-v2"  # Renamed from matchpoint-runners due to stuck deletion (Issue #159)
-region             = "us-central-dfw-2"  # Changed from dfw-1 due to control plane provisioning issues (Issue #159)
-kubernetes_version = "1.30.10"  # Downgraded from 1.31.1 due to ControlPlaneUnresponsive in both dfw-1 and dfw-2 (Issue #159)
-ha_control_plane   = true  # Enabled to test if HA mode avoids ControlPlaneUnresponsive issue (Issue #159)
+# ATTEMPT 7: Try ORD (Chicago) region - DFW region has persistent control plane failures (Issue #159)
+cloudspace_name    = "mp-runners-ord"  # New cloudspace in ORD region
+region             = "us-central-ord-1"  # Switching from DFW to ORD (Chicago) due to DFW control plane failures (Issue #159)
+kubernetes_version = "1.30.10"  # Stable K8s version
+ha_control_plane   = true  # HA for control plane stability
 
 # Environment
 environment = "prod"
 
 # Node pool configuration
-# gp.vs1.large-dfw: 4 vCPU, 15GB RAM
-# Using smaller instance type after spot market volatility (Issue #159)
-# On-demand price: ~$0.081/hr (per Rackspace Spot pricing)
-# Bid $0.20/hr = ~2.5x on-demand, balancing cost vs availability
-# Previous $0.50/hr was 6x on-demand (too expensive)
-server_class = "gp.vs1.large-dfw"
-bid_price    = 0.20
+# gp.vs1.large-ord: 4 vCPU, 15GB RAM (ORD region equivalent)
+# Server classes are region-specific (dfw -> ord suffix)
+server_class = "gp.vs1.large-ord"
+bid_price    = 0.25  # Slightly higher bid for new region availability
 
 # Autoscaling - increase min_nodes to compensate for smaller instances
 min_nodes = 2
