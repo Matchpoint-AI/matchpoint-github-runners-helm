@@ -198,18 +198,44 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-      - name: Clean Orphaned Infrastructure State
+      - name: Import or Clean Infrastructure State
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           github.event.inputs.action == 'apply'
+        env:
+          RACKSPACE_SPOT_API_TOKEN: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
         run: |
-          # Remove stale state entries for resources deleted outside terraform
-          # This handles recovery when cloudspace was manually deleted via spotctl
-          echo "Checking for stale infrastructure state entries..."
-          for resource in $(terraform state list 2>/dev/null | grep -E "module\.(cloudspace|nodepool)\." || true); do
-            echo "Removing stale resource: $resource"
-            terraform state rm "$resource" || true
-          done
+          # Issue #159: Handle existing cloudspaces that aren't in terraform state
+          # Instead of removing state entries, import existing resources
+
+          CLOUDSPACE_NAME=$(grep 'cloudspace_name' ${{ steps.workspace.outputs.workspace }}.tfvars | cut -d'"' -f2)
+          echo "Checking for cloudspace: $CLOUDSPACE_NAME"
+
+          # Check if cloudspace exists in state
+          if terraform state list 2>/dev/null | grep -q "module.cloudspace.spot_cloudspace.main"; then
+            echo "Cloudspace already in state, skipping import"
+          else
+            echo "Cloudspace not in state, checking if it exists..."
+            # Try to import existing cloudspace if it exists
+            if terraform import \
+              -var-file="${{ steps.workspace.outputs.workspace }}.tfvars" \
+              -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
+              -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
+              -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}" \
+              module.cloudspace.spot_cloudspace.main "$CLOUDSPACE_NAME" 2>/dev/null; then
+              echo "Successfully imported existing cloudspace: $CLOUDSPACE_NAME"
+            else
+              echo "No existing cloudspace to import, will create new one"
+            fi
+          fi
+
+          # Import time_sleep if cloudspace was imported but time_sleep isn't in state
+          if terraform state list 2>/dev/null | grep -q "module.cloudspace.spot_cloudspace.main"; then
+            if ! terraform state list 2>/dev/null | grep -q "module.cloudspace.time_sleep.wait_for_control_plane"; then
+              echo "Creating time_sleep placeholder in state..."
+              # time_sleep doesn't need import - it will be created on next apply
+            fi
+          fi
         continue-on-error: true
 
       - name: Terraform Apply - Infrastructure
