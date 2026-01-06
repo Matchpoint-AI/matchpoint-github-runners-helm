@@ -23,11 +23,19 @@ resource "spot_cloudspace" "main" {
   preemption_webhook = var.preemption_webhook != "" ? var.preemption_webhook : null
 }
 
+# Wait for control plane to become ready before fetching kubeconfig
+# Issue #159: Control plane takes 5-10 minutes to provision after cloudspace creation
+resource "time_sleep" "wait_for_control_plane" {
+  depends_on = [spot_cloudspace.main]
+
+  create_duration = "10m"  # Wait 10 minutes for control plane to provision
+}
+
 # Retrieve kubeconfig for the created cloudspace
 data "spot_kubeconfig" "main" {
   cloudspace_name = spot_cloudspace.main.cloudspace_name
 
-  depends_on = [spot_cloudspace.main]
+  depends_on = [time_sleep.wait_for_control_plane]
 }
 
 # Store kubeconfig as a local file (optional, for debugging)
