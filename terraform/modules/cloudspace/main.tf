@@ -16,7 +16,7 @@ resource "spot_cloudspace" "main" {
   region             = var.region
   kubernetes_version = var.kubernetes_version
   hacontrol_plane    = var.ha_control_plane
-  wait_until_ready   = true
+  wait_until_ready   = false  # Issue #159: Disable blocking wait - cloudspace creates faster without waiting
 
   # Optional: Slack/webhook notification for preemption events
   # Only set if non-empty (provider requires valid URL or null)
