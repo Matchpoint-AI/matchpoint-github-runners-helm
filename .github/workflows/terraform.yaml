@@ -176,6 +176,20 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
+      - name: Clean Orphaned Infrastructure State
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          github.event.inputs.action == 'apply'
+        run: |
+          # Remove stale state entries for resources deleted outside terraform
+          # This handles recovery when cloudspace was manually deleted via spotctl
+          echo "Checking for stale infrastructure state entries..."
+          for resource in $(terraform state list 2>/dev/null | grep -E "module\.(cloudspace|nodepool)\." || true); do
+            echo "Removing stale resource: $resource"
+            terraform state rm "$resource" || true
+          done
+        continue-on-error: true
+
       - name: Terraform Apply - Infrastructure
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
