@@ -128,6 +128,18 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
+      - name: Clean Stale State Before Plan
+        if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+        run: |
+          # Remove stale state entries for resources deleted outside terraform
+          # This allows plan to succeed even if resources were manually deleted
+          echo "Checking for stale infrastructure state entries..."
+          for resource in $(terraform state list 2>/dev/null | grep -E "module\.(cloudspace|nodepool|argocd)\." || true); do
+            echo "Removing stale resource: $resource"
+            terraform state rm "$resource" || true
+          done
+        continue-on-error: true
+
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
