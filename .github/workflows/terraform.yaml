@@ -243,9 +243,54 @@ jobs:
             -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}"
 
+      - name: Clean State and Delete Cloudspace via API
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          # Step 1: Remove ALL terraform state entries
+          # This handles stuck cloudspaces that can't be destroyed normally
+          echo "Cleaning ALL state entries for clean destroy..."
+          for resource in $(terraform state list 2>/dev/null || true); do
+            echo "Removing state entry: $resource"
+            terraform state rm "$resource" || true
+          done
+
+          # Step 2: Delete cloudspace directly via Rackspace Spot API
+          # This bypasses Terraform's data source dependency that fails on stuck cloudspaces
+          CLOUDSPACE_NAME=$(grep 'cloudspace_name' "${{ steps.workspace.outputs.workspace }}.tfvars" | cut -d'"' -f2)
+          echo "Deleting cloudspace '$CLOUDSPACE_NAME' via Rackspace Spot API..."
+
+          # Get org ID first
+          ORG_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
+            "https://spot.rackspace.com/api/v1/organizations" | jq -r '.[0].id')
+
+          if [ -n "$ORG_ID" ] && [ "$ORG_ID" != "null" ]; then
+            echo "Found org ID: $ORG_ID"
+
+            # Delete cloudspace
+            DELETE_RESPONSE=$(curl -s -w "%{http_code}" -X DELETE \
+              -H "Authorization: Bearer ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
+              "https://spot.rackspace.com/api/v1/organizations/$ORG_ID/cloudspaces/$CLOUDSPACE_NAME")
+
+            HTTP_CODE="${DELETE_RESPONSE: -3}"
+            BODY="${DELETE_RESPONSE:0:${#DELETE_RESPONSE}-3}"
+
+            echo "Delete response code: $HTTP_CODE"
+            echo "Delete response body: $BODY"
+
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "404" ]; then
+              echo "Cloudspace deleted or already gone"
+            else
+              echo "Warning: Unexpected response, continuing anyway"
+            fi
+          else
+            echo "Warning: Could not get org ID, cloudspace may need manual deletion"
+          fi
+        continue-on-error: true
+
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         run: |
+          # After state cleanup and API deletion, this will show "no resources to destroy"
           terraform destroy -auto-approve \
             -var-file="${{ steps.workspace.outputs.workspace }}.tfvars" \
             -var="rackspace_spot_token=${{ secrets.RACKSPACE_SPOT_API_TOKEN }}" \
