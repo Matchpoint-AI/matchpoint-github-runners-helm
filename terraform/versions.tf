@@ -23,7 +23,7 @@ terraform {
   required_providers {
     spot = {
       source  = "rackerlabs/spot"
-      version = "~> 0.1"
+      version = "0.1.4"  # Pinned to latest v0.1.4 for stability (Issue #159)
     }
     helm = {
       source  = "hashicorp/helm"
