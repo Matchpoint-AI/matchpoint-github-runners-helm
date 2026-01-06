@@ -56,4 +56,4 @@ terraform {
     }
   }
 }
-# PR #169: Trigger terraform check
+# PR #170: Trigger terraform check for force-delete fix

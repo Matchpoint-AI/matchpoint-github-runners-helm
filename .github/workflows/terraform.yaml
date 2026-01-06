@@ -253,7 +253,7 @@ jobs:
             -var="github_token=${{ secrets.INFRA_GH_TOKEN }}" \
             -var="preemption_webhook=${{ secrets.SLACK_PREEMPTION_WEBHOOK }}"
 
-      - name: Clean State and Delete Cloudspace via spotctl
+      - name: Clean State and Delete ALL Cloudspaces via spotctl
         if: github.event.inputs.action == 'destroy'
         env:
           RACKSPACE_SPOT_API_TOKEN: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
@@ -266,12 +266,8 @@ jobs:
             terraform state rm "$resource" || true
           done
 
-          # Step 2: Delete cloudspace using spotctl CLI
-          # spotctl handles the API correctly and supports stuck cloudspaces
-          CLOUDSPACE_NAME=$(grep 'cloudspace_name' "${{ steps.workspace.outputs.workspace }}.tfvars" | cut -d'"' -f2)
-          echo "Deleting cloudspace '$CLOUDSPACE_NAME' via spotctl..."
-
-          # Configure spotctl
+          # Step 2: Configure spotctl CLI
+          echo "Configuring spotctl..."
           mkdir -p ~/.spot
           cat > ~/.spot_config << EOF
           org: "matchpoint-ai"
@@ -279,18 +275,22 @@ jobs:
           accessToken: "${RACKSPACE_SPOT_API_TOKEN}"
           EOF
 
-          # List existing cloudspaces first
-          echo "Current cloudspaces:"
-          ~/go/bin/spotctl cloudspaces list --org matchpoint-ai -o table || echo "Failed to list cloudspaces"
+          # Step 3: List all existing cloudspaces
+          echo "=== Current cloudspaces ==="
+          ~/go/bin/spotctl cloudspaces list --org matchpoint-ai -o json || echo "Failed to list cloudspaces"
 
-          # Delete the cloudspace
-          echo "Deleting cloudspace $CLOUDSPACE_NAME..."
-          ~/go/bin/spotctl cloudspaces delete --name "$CLOUDSPACE_NAME" --org matchpoint-ai || echo "Cloudspace may already be deleted or not exist"
+          # Step 4: Delete ALL cloudspaces in the org (cleanup stuck ones)
+          # Use -y flag to skip confirmation prompt
+          echo "=== Deleting ALL cloudspaces ==="
+          for cs in $(~/go/bin/spotctl cloudspaces list --org matchpoint-ai -o json 2>/dev/null | jq -r '.cloudspaces[].name' || true); do
+            echo "Deleting cloudspace: $cs"
+            yes | ~/go/bin/spotctl cloudspaces delete --name "$cs" --org matchpoint-ai || echo "Failed to delete $cs (may already be deleted)"
+          done
 
-          # Verify deletion
-          echo "Verifying deletion..."
+          # Step 5: Verify deletion
+          echo "=== Verifying deletion ==="
           sleep 5
-          ~/go/bin/spotctl cloudspaces list --org matchpoint-ai -o table || true
+          ~/go/bin/spotctl cloudspaces list --org matchpoint-ai -o json || true
 
           echo "Cloudspace cleanup complete."
 
