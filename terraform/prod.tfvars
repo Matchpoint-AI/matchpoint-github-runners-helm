@@ -4,7 +4,7 @@
 # Cloudspace configuration
 cloudspace_name    = "matchpoint-runners"
 region             = "us-central-dfw-2"  # Changed from dfw-1 due to control plane provisioning issues (Issue #159)
-kubernetes_version = "1.31.1"
+kubernetes_version = "1.30.10"  # Downgraded from 1.31.1 due to ControlPlaneUnresponsive in both dfw-1 and dfw-2 (Issue #159)
 ha_control_plane   = false
 
 # Environment
