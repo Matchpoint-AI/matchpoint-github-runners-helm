@@ -2,7 +2,7 @@
 # Usage: terraform apply -var-file=prod.tfvars
 
 # Cloudspace configuration
-cloudspace_name    = "matchpoint-runners"
+cloudspace_name    = "mp-runners-v2"  # Renamed from matchpoint-runners due to stuck deletion (Issue #159)
 region             = "us-central-dfw-2"  # Changed from dfw-1 due to control plane provisioning issues (Issue #159)
 kubernetes_version = "1.30.10"  # Downgraded from 1.31.1 due to ControlPlaneUnresponsive in both dfw-1 and dfw-2 (Issue #159)
 ha_control_plane   = true  # Enabled to test if HA mode avoids ControlPlaneUnresponsive issue (Issue #159)
