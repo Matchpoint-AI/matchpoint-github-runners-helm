@@ -12,12 +12,12 @@ environment = "prod"
 
 # Node pool configuration
 # gp.vs1.large-dfw: 4 vCPU, 15GB RAM
-# Trying smaller instance type to avoid spot market contention (Issue #159)
-# xlarge instances were being immediately outbid in volatile market
+# Using smaller instance type after spot market volatility (Issue #159)
 # On-demand price: ~$0.081/hr (per Rackspace Spot pricing)
-# Bid $0.50/hr = high priority bid for smaller instance
+# Bid $0.20/hr = ~2.5x on-demand, balancing cost vs availability
+# Previous $0.50/hr was 6x on-demand (too expensive)
 server_class = "gp.vs1.large-dfw"
-bid_price    = 0.50
+bid_price    = 0.20
 
 # Autoscaling - increase min_nodes to compensate for smaller instances
 min_nodes = 2
