@@ -11,16 +11,17 @@ ha_control_plane   = false
 environment = "prod"
 
 # Node pool configuration
-# gp.vs1.xlarge-dfw: 8 vCPU, 30GB RAM
-# Each node fits 2 runner pods (3 CPU each: 2 runner + 1 dind sidecar)
-# Market price: $0.013/hr, On-demand: $0.162/hr
-# Bid $0.10/hr = 62% of on-demand, 8x market (safe buffer for CI stability)
+# gp.vs1.xlarge-dfw: 8 vCPU, 30GB RAM (matches Cloud Run runner specs)
+# Larger nodes required to fit runner pods (6 CPU request)
+# Cloud Run equivalent: ~$0.48/hr
+# On-demand price: ~$0.162/hr (per Rackspace Spot pricing)
+# Bid $0.40/hr = ~17% savings vs Cloud Run, high priority to avoid preemption
+# Increased from $0.10 due to spot market price surge causing bid loss (Issue #159)
 server_class = "gp.vs1.xlarge-dfw"
-bid_price    = 0.10
+bid_price    = 0.40
 
 # Autoscaling
-# min_nodes=2 supports minRunners=3 in ARC config (2 runners/node)
-min_nodes = 2
+min_nodes = 1
 max_nodes = 10
 
 # Git configuration
