@@ -15,10 +15,11 @@ environment = "prod"
 # Larger nodes required to fit runner pods (6 CPU request)
 # Cloud Run equivalent: ~$0.48/hr
 # On-demand price: ~$0.162/hr (per Rackspace Spot pricing)
-# Bid $0.40/hr = ~17% savings vs Cloud Run, high priority to avoid preemption
-# Increased from $0.10 due to spot market price surge causing bid loss (Issue #159)
+# Bid $0.80/hr = aggressive bid to win during market surge
+# Increased from $0.40 due to continued spot market volatility (Issue #159)
+# Note: Actual cost will be market rate, not bid price
 server_class = "gp.vs1.xlarge-dfw"
-bid_price    = 0.40
+bid_price    = 0.80
 
 # Autoscaling
 min_nodes = 1
