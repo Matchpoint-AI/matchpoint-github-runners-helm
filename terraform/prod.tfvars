@@ -11,19 +11,17 @@ ha_control_plane   = false
 environment = "prod"
 
 # Node pool configuration
-# gp.vs1.xlarge-dfw: 8 vCPU, 30GB RAM (matches Cloud Run runner specs)
-# Larger nodes required to fit runner pods (6 CPU request)
-# Cloud Run equivalent: ~$0.48/hr
-# On-demand price: ~$0.162/hr (per Rackspace Spot pricing)
-# Bid $0.80/hr = aggressive bid to win during market surge
-# Increased from $0.40 due to continued spot market volatility (Issue #159)
-# Note: Actual cost will be market rate, not bid price
-server_class = "gp.vs1.xlarge-dfw"
-bid_price    = 0.80
+# gp.vs1.large-dfw: 4 vCPU, 15GB RAM
+# Trying smaller instance type to avoid spot market contention (Issue #159)
+# xlarge instances were being immediately outbid in volatile market
+# On-demand price: ~$0.081/hr (per Rackspace Spot pricing)
+# Bid $0.50/hr = high priority bid for smaller instance
+server_class = "gp.vs1.large-dfw"
+bid_price    = 0.50
 
-# Autoscaling
-min_nodes = 1
-max_nodes = 10
+# Autoscaling - increase min_nodes to compensate for smaller instances
+min_nodes = 2
+max_nodes = 15
 
 # Git configuration
 git_repo_url        = "https://github.com/Matchpoint-AI/matchpoint-github-runners-helm"
