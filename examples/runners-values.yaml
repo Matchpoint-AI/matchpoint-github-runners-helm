@@ -6,8 +6,9 @@ gha-runner-scale-set:
   controllerServiceAccount:
     namespace: arc-systems
     name: arc-gha-rs-controller
-  # Organization-level runner to serve all repos (project-beta, project-beta-api, project-beta-frontend)
-  githubConfigUrl: "https://github.com/Matchpoint-AI"
+  # Repo-level runner for matchpoint (repo scope PAT is sufficient; org-level needs admin:org)
+  # To switch back to org-level, change URL to "https://github.com/Matchpoint-AI" and add admin:org scope to PAT
+  githubConfigUrl: "https://github.com/Matchpoint-AI/matchpoint"
   runnerScaleSetName: "arc-beta-runners"  # GitHub label for runs-on (standardized per Issue #889)
 
   # Reference pre-defined secret with org-level PAT (created manually in cluster)
@@ -29,7 +30,7 @@ gha-runner-scale-set:
     spec:
       containers:
       - name: runner
-        image: ghcr.io/matchpoint-ai/arc-runner:latest
+        image: ghcr.io/actions/actions-runner:latest
         imagePullPolicy: IfNotPresent  # Faster startup
         command:
         - /home/runner/run.sh

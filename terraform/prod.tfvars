@@ -2,8 +2,8 @@
 # Usage: terraform apply -var-file=prod.tfvars
 
 # Cloudspace configuration
-# ATTEMPT 10: Retry IAD with pinned provider v0.1.4 and non-HA (simpler config)
-cloudspace_name    = "mp-runners-v3"  # Fresh cloudspace name
+# ATTEMPT 11: Fresh cloudspace name to avoid stale SubscriptionSuspended from v3
+cloudspace_name    = "mp-runners-v4"  # Fresh name — v3 carried stale suspension
 region             = "us-east-iad-1"  # Back to IAD with new provider
 kubernetes_version = "1.30.10"  # Stable K8s version
 ha_control_plane   = false  # Try without HA (simpler control plane)
