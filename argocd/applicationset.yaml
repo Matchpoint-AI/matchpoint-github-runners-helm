@@ -43,6 +43,8 @@ spec:
           allowEmpty: false
         syncOptions:
           - CreateNamespace=true
+          - Replace=true
+          - ServerSideApply=false
         retry:
           limit: 5
           backoff:
