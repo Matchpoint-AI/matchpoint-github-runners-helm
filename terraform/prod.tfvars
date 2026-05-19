@@ -22,7 +22,7 @@ max_nodes = 15
 
 # Git configuration
 git_repo_url        = "https://github.com/Matchpoint-AI/matchpoint-github-runners-helm"
-git_target_revision = "main"
+git_target_revision = "chore/runners-iac-gcs-backend"  # Temporary: testing branch before merge
 
 # Debug (disable in production after initial setup)
 write_kubeconfig = true
