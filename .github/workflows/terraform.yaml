@@ -123,15 +123,15 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
-          # HTTP backend requires workspace in URL (no native workspace support)
-          WORKSPACE="${{ steps.workspace.outputs.workspace }}"
-          if [ "$WORKSPACE" = "default" ]; then
-            terraform init
+          # Backend is now GCS (gs://matchpoint-tofu-state/matchpoint-github-runners-helm/prod).
+          # PR CI runs without GCS credentials yet (follow-up: wire up workload identity).
+          # For PRs: init with -backend=false (validate config only, no state access).
+          # For push/dispatch: full init using the GCS backend baked into versions.tf
+          # (requires GOOGLE_APPLICATION_CREDENTIALS — wire up in a follow-up PR).
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            terraform init -backend=false
           else
-            terraform init \
-              -backend-config="address=https://api.tfstate.dev/github/v1?workspace=${WORKSPACE}" \
-              -backend-config="lock_address=https://api.tfstate.dev/github/v1/lock?workspace=${WORKSPACE}" \
-              -backend-config="unlock_address=https://api.tfstate.dev/github/v1/lock?workspace=${WORKSPACE}"
+            terraform init
           fi
 
       - name: Terraform Validate
@@ -139,7 +139,7 @@ jobs:
         run: terraform validate -no-color
 
       - name: Clean Stale State Before Plan
-        if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+        if: github.event.inputs.action == 'plan'
         run: |
           # Remove stale state entries for resources deleted outside terraform
           # This allows plan to succeed even if resources were manually deleted
@@ -152,7 +152,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+        if: github.event.inputs.action == 'plan'
         run: |
           # During PR validation, skip ArgoCD module (requires existing cluster)
           # ArgoCD will be deployed during terraform apply after cluster creation
