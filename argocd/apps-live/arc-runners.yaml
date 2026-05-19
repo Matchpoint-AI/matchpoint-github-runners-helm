@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm
-    targetRevision: chore/runners-iac-gcs-backend  # Temporary: testing before merge
+    targetRevision: main
     path: charts/github-actions-runners
     helm:
       # CRITICAL: releaseName MUST match runnerScaleSetName in values file

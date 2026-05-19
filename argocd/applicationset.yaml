@@ -22,7 +22,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/Matchpoint-AI/matchpoint-github-runners-helm
-        targetRevision: main
+        targetRevision: chore/runners-iac-gcs-backend  # Temporary: testing before merge
         path: charts/github-actions-runners
         helm:
           releaseName: '{{name}}'
