@@ -16,10 +16,10 @@ gha-runner-scale-set:
   githubConfigSecret: arc-org-github-secret
 
   # Scaling configuration - tuned for capacity (Issues #152, #154)
-  # Resource math: Each pod needs 3 CPU (runner: 2, dind: 1)
-  # With 15 max nodes × 7.5 CPU = 112 CPU → ~30 max concurrent runners
-  # Keep minRunners warm to eliminate cold start delays (2-5 min → <10 sec)
-  minRunners: 5      # 5 warm runners for instant job pickup (Issue #152)
+  # Resource math: Each pod needs 3 CPU (runner: 2, dind: 1) + 11Gi memory
+  # gp.vs1.large-iad nodes have 3.5 CPU allocatable → 1 runner pod per node
+  # With 25 max nodes → 25 max concurrent runners
+  minRunners: 2      # 2 warm runners; reduced from 5 to lower steady-state node cost
   maxRunners: 25     # Allow scaling to 25 for peak demand (Issue #154)
 
   # Security context for beta runners - removed to allow runner to work properly
@@ -28,6 +28,9 @@ gha-runner-scale-set:
 
   template:
     spec:
+      # Allow 10 min for post-job cleanup (cache upload, artifact finalization).
+      # Default 30s causes ARC to kill pods mid-upload → actions/cache failures.
+      terminationGracePeriodSeconds: 600
       containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
@@ -57,9 +60,7 @@ gha-runner-scale-set:
         - name: PIP_CACHE_DIR
           value: "/home/runner/_work/_pip-cache"
         resources:
-          # Reduced to allow 2 pods per node (Issue #141)
-          # Node capacity: 7.5 CPU allocatable - 2 pods × 3 CPU = 6 CPU, leaving 1.5 CPU for system
-          # Trade-off: Slightly slower CI but better scheduling and concurrency
+          # gp.vs1.large-iad: 3.5 CPU allocatable → 1 pod/node at these requests
           requests:
             cpu: "2"        # Reduced from 4 for better pod density
             memory: 8Gi     # Reduced from 12Gi for better scheduling
