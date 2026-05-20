@@ -16,9 +16,9 @@ environment = "prod"
 server_class = "gp.vs1.large-iad"
 bid_price    = 0.30  # Higher bid
 
-# Autoscaling - increase min_nodes to compensate for smaller instances
+# Autoscaling — 1 runner pod per node (3 CPU request vs 3.5 allocatable)
 min_nodes = 2
-max_nodes = 15
+max_nodes = 25
 
 # Git configuration
 git_repo_url        = "https://github.com/Matchpoint-AI/matchpoint-github-runners-helm"
