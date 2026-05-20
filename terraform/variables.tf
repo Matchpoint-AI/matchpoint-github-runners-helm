@@ -13,7 +13,13 @@ variable "rackspace_spot_token" {
 }
 
 variable "github_token" {
-  description = "GitHub token for ArgoCD repository access"
+  description = "GitHub token for ArgoCD repository access (needs Contents:read on the helm repo)"
+  type        = string
+  sensitive   = true
+}
+
+variable "arc_runners_github_token" {
+  description = "GitHub token for ARC org-level runner registration (needs admin:org on classic PAT, or Self-hosted runners: read/write on fine-grained)"
   type        = string
   sensitive   = true
 }

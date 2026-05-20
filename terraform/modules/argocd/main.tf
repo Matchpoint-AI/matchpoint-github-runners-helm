@@ -70,7 +70,7 @@ resource "kubernetes_secret" "arc_github_token" {
   }
 
   data = {
-    github_token = var.github_token
+    github_token = var.arc_runners_github_token
   }
 
   depends_on = [time_sleep.wait_for_arc_runners_namespace]
