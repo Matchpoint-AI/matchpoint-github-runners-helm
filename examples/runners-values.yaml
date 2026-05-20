@@ -16,9 +16,9 @@ gha-runner-scale-set:
   githubConfigSecret: arc-org-github-secret
 
   # Scaling configuration - tuned for capacity (Issues #152, #154)
-  # Resource math: Each pod needs 3 CPU (runner: 2, dind: 1) + 11Gi memory
-  # gp.vs1.large-iad nodes have 3.5 CPU allocatable → 1 runner pod per node
-  # With 25 max nodes → 25 max concurrent runners
+  # Resource math: Each pod needs 1.5 CPU (runner: 1, dind: 0.5) + 6Gi memory
+  # gp.vs1.large-iad nodes have 3.5 CPU / 15Gi allocatable → 2 runner pods per node
+  # With 25 max nodes → 50 max concurrent runners
   minRunners: 2      # 2 warm runners; reduced from 5 to lower steady-state node cost
   maxRunners: 25     # Allow scaling to 25 for peak demand (Issue #154)
 
@@ -60,10 +60,10 @@ gha-runner-scale-set:
         - name: PIP_CACHE_DIR
           value: "/home/runner/_work/_pip-cache"
         resources:
-          # gp.vs1.large-iad: 3.5 CPU allocatable → 1 pod/node at these requests
+          # Right-sized: 1 CPU + 0.5 dind = 1.5 CPU/pod → 2 pods/node on 3.5 allocatable
           requests:
-            cpu: "2"        # Reduced from 4 for better pod density
-            memory: 8Gi     # Reduced from 12Gi for better scheduling
+            cpu: "1"        # Reduced from 2 for 2x pod density
+            memory: 4Gi     # Reduced from 8Gi for 2x pod density
           limits:
             cpu: "3"        # Allow burst to 3 CPU
             memory: 10Gi
@@ -84,11 +84,10 @@ gha-runner-scale-set:
         - name: DOCKER_TLS_CERTDIR
           value: ""
         resources:
-          # DinD sidecar - reduced for better pod density (Issue #141)
-          # Still sufficient for Docker builds and testcontainers
+          # DinD sidecar - right-sized for pod density
           requests:
-            cpu: "1"        # Reduced from 2 for better scheduling
-            memory: 3Gi     # Reduced from 4Gi
+            cpu: "500m"     # Reduced from 1 for 2x pod density
+            memory: 2Gi     # Reduced from 3Gi
           limits:
             cpu: "2"        # Allow burst for heavy builds
             memory: 6Gi
