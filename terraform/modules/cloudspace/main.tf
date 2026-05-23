@@ -16,7 +16,7 @@ resource "spot_cloudspace" "main" {
   region             = var.region
   kubernetes_version = var.kubernetes_version
   hacontrol_plane    = var.ha_control_plane
-  wait_until_ready   = false  # Issue #159: Disable blocking wait - cloudspace creates faster without waiting
+  wait_until_ready   = false # Issue #159: Disable blocking wait - cloudspace creates faster without waiting
 
   # Optional: Slack/webhook notification for preemption events
   # Only set if non-empty (provider requires valid URL or null)
@@ -30,7 +30,7 @@ resource "spot_cloudspace" "main" {
 resource "time_sleep" "wait_for_control_plane" {
   depends_on = [spot_cloudspace.main]
 
-  create_duration = "30m"  # Wait 30 minutes for control plane to provision
+  create_duration = "30m" # Wait 30 minutes for control plane to provision
 }
 
 # Retrieve kubeconfig for the created cloudspace
