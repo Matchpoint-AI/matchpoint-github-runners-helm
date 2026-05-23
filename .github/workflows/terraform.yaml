@@ -124,14 +124,13 @@ jobs:
         id: init
         run: |
           # Backend is now GCS (gs://matchpoint-tofu-state/matchpoint-github-runners-helm/prod).
-          # PR CI runs without GCS credentials yet (follow-up: wire up workload identity).
-          # For PRs: init with -backend=false (validate config only, no state access).
-          # For push/dispatch: full init using the GCS backend baked into versions.tf
-          # (requires GOOGLE_APPLICATION_CREDENTIALS — wire up in a follow-up PR).
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            terraform init -backend=false
-          else
+          # PR/push/plan validation runs without GCS credentials yet (follow-up: wire up workload identity).
+          # Use -backend=false for non-mutating validation so main stays green without state access.
+          # Full backend init is reserved for explicit workflow_dispatch apply/destroy runs.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.action }}" != "plan" ]; then
             terraform init
+          else
+            terraform init -backend=false
           fi
 
       - name: Terraform Validate
@@ -200,8 +199,7 @@ jobs:
 
       - name: Import or Clean Infrastructure State
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          github.event.inputs.action == 'apply'
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
         env:
           RACKSPACE_SPOT_API_TOKEN: ${{ secrets.RACKSPACE_SPOT_API_TOKEN }}
         run: |
@@ -240,8 +238,7 @@ jobs:
 
       - name: Terraform Apply - Infrastructure
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          github.event.inputs.action == 'apply'
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
         run: |
           # Stage 1: Create cloudspace and nodepool first
           terraform apply -auto-approve \
@@ -254,8 +251,7 @@ jobs:
 
       - name: Clean Orphaned ArgoCD State
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          github.event.inputs.action == 'apply'
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
         run: |
           # Remove orphaned ArgoCD resources from state if cluster was recreated
           # This handles the case where cluster was destroyed but state retained references
@@ -269,8 +265,7 @@ jobs:
 
       - name: Terraform Apply - ArgoCD
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          github.event.inputs.action == 'apply'
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
         run: |
           # Stage 2: Deploy ArgoCD after cluster is ready
           terraform apply -auto-approve \
@@ -332,8 +327,7 @@ jobs:
 
       - name: Save Kubeconfig Artifact
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          github.event.inputs.action == 'apply'
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
         uses: actions/upload-artifact@v4
         with:
           name: kubeconfig
