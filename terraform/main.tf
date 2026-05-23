@@ -79,11 +79,11 @@ module "nodepool" {
 module "argocd" {
   source = "./modules/argocd"
 
-  namespace           = "argocd"
+  namespace                = "argocd"
   github_token             = var.github_token
   arc_runners_github_token = var.arc_runners_github_token
-  git_repo_url        = var.git_repo_url
-  git_target_revision = var.git_target_revision
+  git_repo_url             = var.git_repo_url
+  git_target_revision      = var.git_target_revision
   # Bootstrap application creates ArgoCD apps for ARC controller and runners
   # This ensures runners are automatically deployed when infrastructure is provisioned
   enable_bootstrap_app = true
