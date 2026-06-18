@@ -442,6 +442,7 @@ kubectl get pods -n arc-runners -o jsonpath='{.items[0].spec.containers[0].image
 ```
 
 **Custom Image Includes:**
+
 | Tool | Version |
 |------|---------|
 | wget, curl, jq | latest |
