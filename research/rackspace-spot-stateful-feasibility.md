@@ -257,7 +257,7 @@ Rackspace's own benchmarks confirm Cinder PVCs survive preemption and reattach, 
 
 **Severity:** P1 -- high confidence from vendor data, but must verify.
 
-### If blockers are resolved, use this configuration:
+### If blockers are resolved, use this configuration
 
 | Parameter | Value |
 |---|---|

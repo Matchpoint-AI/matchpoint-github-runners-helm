@@ -1,6 +1,12 @@
 # Matchpoint GitHub Runners Helm Charts
 
-This repository manages self-hosted GitHub Actions runners for the Matchpoint-AI organization, deployed on **Rackspace Spot** infrastructure using GitOps principles.
+> Decommissioned: Matchpoint-AI CI no longer uses this Rackspace Spot ARC
+> runner stack. Workflows have moved to the managed `blacksmith-*` runner
+> labels, and the former Speedforge cutover path for this repo is superseded.
+> Do not add new runner maintenance here; archive this repository after the
+> decommission PR is merged.
+
+This repository formerly managed self-hosted GitHub Actions runners for the Matchpoint-AI organization, deployed on **Rackspace Spot** infrastructure using GitOps principles.
 
 ## Overview
 
